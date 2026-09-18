@@ -3,2205 +3,1828 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KURAMA — AI Color Intelligence</title>
+  <title>Ascend — Scale Smarter, Not Harder</title>
 
-  <!-- Typography: Outfit, Playfair Display, General Sans, Raleway, JetBrains Mono -->
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-    @import url('https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Raleway:wght@300;400;500;600;700;800;900&display=swap');
-  </style>
+  <!-- Google Fonts: Inter weights 400–900 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Three.js CDN Import Map for 3D Spheres WebGL -->
+  <!-- Importmap pinned to Three.js r0.143.0 -->
   <script type="importmap">
   {
     "imports": {
-      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      "three": "https://unpkg.com/three@0.143.0/build/three.module.js",
+      "three/examples/jsm/": "https://unpkg.com/three@0.143.0/examples/jsm/"
     }
   }
   </script>
 
   <style>
-    /* =========================================================
-       GLOBAL RESET & TOKENS
-       ========================================================= */
     :root {
-      --font-playfair: 'Playfair Display', Georgia, serif;
-      --font-outfit: 'Outfit', sans-serif;
-      --font-general: 'General Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-raleway: 'Raleway', sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-
-      --neon-accent: #39FF14;
-      --neon-glow: rgba(57, 255, 20, 0.45);
-      --white: #ffffff;
-      --black: #000000;
-
-      --kurama-primary: #2F69FF;
-      --kurama-secondary: #A8C1FF;
-      --kurama-accent: #0E2AC5;
-      --kurama-surface: #FFFFFF;
-      --kurama-bg: #F7FAFC;
-      --kurama-text: #111111;
-
-      --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
-      --ease-dramatic: cubic-bezier(0.05, 0.9, 0.1, 1);
+      --bg: #04060f;
+      --bg-2: #060a18;
+      --ink: #f3f6ff;
+      --muted: #9aa6c4;
+      --muted-2: #6b7796;
+      --line: rgba(150, 175, 230, .12);
+      --line-strong: rgba(150, 175, 230, .22);
+      --accent: #5df0a8;
+      --accent-2: #2fd38a;
+      --accent-ink: #032018;
+      --glass: rgba(12, 18, 38, .55);
+      --glass-2: rgba(16, 24, 48, .65);
+      --radius: 18px;
+      --radius-lg: 26px;
+      --maxw: 1180px;
+      --shadow: 0 30px 80px -30px rgba(0, 0, 0, .75);
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      width: 100%;
-      min-height: 100vh;
-      overflow: hidden;
-      background-color: #000000;
-      color: #ffffff;
-      font-family: var(--font-raleway);
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      color: var(--ink);
+      background: var(--bg);
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
-      user-select: none;
+      overflow-x: hidden;
     }
+    a { color: inherit; text-decoration: none; }
 
-    button, input, textarea {
-      font: inherit;
-      outline: none;
+    /* Lenis */
+    html.lenis, html.lenis body { height: auto; }
+    .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+    .lenis.lenis-stopped { overflow: hidden; }
+
+    /* Staggered scroll-reveal */
+    [data-reveal] {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity .7s cubic-bezier(.22, .7, .2, 1), transform .7s cubic-bezier(.22, .7, .2, 1);
+      transition-delay: var(--rd, 0ms);
+      will-change: opacity, transform;
     }
+    [data-reveal].in { opacity: 1; transform: none; }
 
-    /* =========================================================
-       PAGE VIEWS CONTROLLER
-       ========================================================= */
-    .view-container {
+    /* Fixed WebGL planet behind everything, never grabs pointer/scroll */
+    .planet-canvas {
       position: fixed;
       inset: 0;
       width: 100vw;
       height: 100vh;
-      overflow: hidden;
-      transition: opacity 0.6s var(--ease-smooth), transform 0.6s var(--ease-smooth), visibility 0.6s;
-    }
-
-    .view-container.hidden-view {
-      opacity: 0;
-      pointer-events: none;
-      visibility: hidden;
-      transform: scale(0.97);
-    }
-
-    .view-container.active-view {
-      opacity: 1;
-      pointer-events: auto;
-      visibility: visible;
-      transform: scale(1);
-    }
-
-    /* =========================================================
-       VIEW 1: 3D SPHERE FIELD (LANDING / HERO CANVAS)
-       ========================================================= */
-    #view-canvas {
-      z-index: 10;
-      background: #f7fafc;
-      color: #111111;
-    }
-
-    #bgGradient {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      background: radial-gradient(circle at 50% 45%, #ffffff 0%, #ecefff 36%, #c2d1ff 100%);
-      transition: background 1s var(--ease-smooth);
-    }
-
-    #webglWrap {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    #webgl {
-      width: 100%;
-      height: 100%;
       display: block;
-    }
-
-    .canvas-shell {
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 24px 36px 30px;
+      z-index: 0;
       pointer-events: none;
     }
 
-    /* Header Bar */
-    .canvas-header {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      width: 100%;
-      pointer-events: auto;
+    .page { position: relative; z-index: 1; }
+    .section {
+      position: relative;
+      z-index: 1;
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: clamp(80px, 12vw, 160px) 24px;
     }
 
-    .canvas-brand {
-      font-family: var(--font-raleway);
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: 0.22em;
-      color: #0a0b0e;
-      text-transform: uppercase;
-    }
-
-    .canvas-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      font-family: var(--font-raleway);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.2em;
-      color: rgba(16, 17, 20, 0.65);
-      text-transform: uppercase;
-      padding: 6px 14px;
-      background: rgba(255, 255, 255, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      border-radius: 999px;
-      backdrop-filter: blur(14px);
-    }
-
-    .status-dot-blue {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--kurama-primary);
-      box-shadow: 0 0 10px rgba(47, 105, 255, 0.7);
-      animation: pulse-blue 2s infinite ease-in-out;
-    }
-
-    @keyframes pulse-blue {
-      0%, 100% { transform: scale(0.9); opacity: 0.7; }
-      50% { transform: scale(1.2); opacity: 1; }
-    }
-
-    .canvas-actions {
-      justify-self: end;
-      display: flex;
-      gap: 12px;
-    }
-
-    .canvas-pill-btn {
-      height: 42px;
-      padding: 0 20px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--font-raleway);
+    .eyebrow {
+      display: inline-block;
       font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      color: #12141a;
-      background: rgba(255, 255, 255, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px);
-      box-shadow: 0 8px 24px rgba(25, 45, 95, 0.08), inset 0 1.5px 2px rgba(255, 255, 255, 0.9);
-      cursor: pointer;
-      transition: all 0.3s var(--ease-smooth);
-    }
-
-    .canvas-pill-btn:hover {
-      transform: translateY(-2px);
-      background: rgba(255, 255, 255, 0.75);
-      box-shadow: 0 12px 30px rgba(25, 45, 95, 0.15);
-    }
-
-    /* Middle Hero Section with "Get Started" CTA */
-    .landing-hero-center {
-      align-self: center;
-      max-width: 780px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      pointer-events: auto;
-      margin: auto 0;
-      padding: 40px 32px;
-      border-radius: 36px;
-      background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.28));
-      border: 1px solid rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(24px) saturate(140%);
-      box-shadow: 0 30px 80px rgba(20, 35, 80, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-      animation: float-gentle 6s ease-in-out infinite;
-    }
-
-    @keyframes float-gentle {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-8px); }
-    }
-
-    .landing-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--font-raleway);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.28em;
-      color: var(--kurama-primary);
+      font-weight: 600;
+      letter-spacing: .18em;
       text-transform: uppercase;
+      color: var(--accent);
       margin-bottom: 18px;
     }
 
-    .landing-title {
-      font-family: var(--font-raleway);
-      font-size: clamp(2.4rem, 5.2vw, 3.8rem);
-      font-weight: 800;
-      color: #0b0c10;
-      line-height: 1.12;
-      letter-spacing: -0.025em;
-      margin-bottom: 16px;
-    }
-
-    .landing-desc {
-      font-family: var(--font-raleway);
-      font-size: clamp(0.95rem, 1.4vw, 1.15rem);
-      font-weight: 500;
-      color: rgba(18, 20, 26, 0.7);
-      line-height: 1.6;
-      max-width: 580px;
-      margin-bottom: 32px;
-    }
-
-    /* "Get Started" CTA Button in the Middle */
-    .btn-get-started {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      gap: 14px;
-      padding: 1.2rem 3rem;
-      border-radius: 9999px;
-      background: linear-gradient(135deg, #1848d6, #0e2ac5);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      font-family: var(--font-raleway);
-      font-size: 1.15rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      cursor: pointer;
-      box-shadow: 0 16px 40px rgba(14, 42, 197, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.5);
-      transition: all 0.35s var(--ease-smooth);
-      overflow: hidden;
-    }
-
-    .btn-get-started:hover {
-      transform: translateY(-3px) scale(1.03);
-      background: linear-gradient(135deg, #2558f0, #1333d6);
-      box-shadow: 0 22px 50px rgba(14, 42, 197, 0.45), inset 0 1.5px 2px rgba(255, 255, 255, 0.7);
-    }
-
-    .btn-get-started:active {
-      transform: translateY(0) scale(0.98);
-    }
-
-    .btn-arrow-icon {
-      transition: transform 0.3s var(--ease-smooth);
-    }
-
-    .btn-get-started:hover .btn-arrow-icon {
-      transform: translateX(4px);
-    }
-
-    /* Footer Info */
-    .canvas-footer {
+    .section-head {
+      max-width: 680px;
+      margin: 0 auto clamp(48px, 6vw, 80px);
       text-align: center;
-      font-family: var(--font-raleway);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.22em;
-      color: rgba(16, 17, 20, 0.45);
-      text-transform: uppercase;
-      pointer-events: auto;
+    }
+    .section-head h2, .showcase-copy h2, .cta-card h2 {
+      font-size: clamp(30px, 4.4vw, 50px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -.02em;
+      text-shadow: 0 2px 40px rgba(0, 0, 0, .6);
+    }
+    .section-head p {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.65;
+      text-shadow: 0 1px 24px rgba(0, 0, 0, .55);
     }
 
-    /* =========================================================
-       VIEW 2: LOOPSTACK THEME SPECIFICATION
-       ========================================================= */
-    #view-loopstack {
-      z-index: 20;
-      background-color: #000000;
-      color: #ffffff;
-      overflow: hidden;
-      cursor: none; /* Hide default cursor so custom cursor shines */
-    }
-
-    /* 1. Top gradient overlay */
-    #top-gradient {
-      position: fixed;
-      top: -30vh;
-      left: 0;
-      width: 100vw;
-      height: auto;
-      display: block;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    /* Loopstack Top Navigation (Switch Back & Kurama Status) */
-    .loopstack-nav {
-      position: fixed;
-      top: 24px;
-      left: 24px;
-      right: 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 5;
-      pointer-events: none;
-    }
-
-    .loopstack-nav-btn {
-      pointer-events: auto;
-      height: 38px;
-      padding: 0 16px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      backdrop-filter: blur(14px);
-      color: #ffffff;
-      font-family: var(--font-outfit);
-      font-size: 0.85rem;
-      font-weight: 500;
-      letter-spacing: 0.03em;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: all 0.3s var(--ease-smooth);
-    }
-
-    .loopstack-nav-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.4);
-      transform: translateY(-1px);
-    }
-
-    .kurama-status-badge {
-      pointer-events: auto;
+    /* Buttons */
+    .btn {
       display: inline-flex;
       align-items: center;
       gap: 9px;
-      height: 38px;
-      padding: 0 18px;
-      border-radius: 999px;
-      background: rgba(10, 10, 12, 0.7);
-      border: 1px solid rgba(57, 255, 20, 0.3);
-      backdrop-filter: blur(14px);
-      color: #39FF14;
-      font-family: var(--font-general);
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      box-shadow: 0 0 20px rgba(57, 255, 20, 0.15);
-      cursor: pointer;
-      transition: all 0.3s var(--ease-smooth);
-    }
-
-    .kurama-status-badge:hover {
-      border-color: #39FF14;
-      box-shadow: 0 0 25px rgba(57, 255, 20, 0.35);
-      transform: translateY(-1px);
-    }
-
-    .kurama-status-badge .badge-dot {
-      width: 8px;
-      height: 8px;
-      background: #39FF14;
-      border-radius: 50%;
-      box-shadow: 0 0 10px #39FF14;
-      animation: pulse-glow 2s infinite ease-in-out;
-    }
-
-    /* 2. Hero content (headline + button) */
-    .hero-content {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding-top: 6vh;
-      width: 95%;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    .hero-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 2.8rem;
-      font-weight: 400;
-      color: #ffffff;
-      line-height: 1.15;
-      margin-bottom: 2.2rem;
-      letter-spacing: -0.015em;
-      text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-    }
-
-    /* Hero headline word-by-word reveal mask */
-    .hero-title .word-wrapper {
-      display: inline-block;
-      overflow: hidden;
-      vertical-align: bottom;
-      padding-bottom: 0.15em;
-      margin-bottom: -0.15em;
-    }
-
-    .hero-title .word-inner {
-      display: inline-block;
-      opacity: 0;
-      transform: translateY(105%);
-      filter: blur(20px);
-      animation: word-reveal-mask 1.3s cubic-bezier(0.05, 0.9, 0.1, 1) forwards;
-    }
-
-    @keyframes word-reveal-mask {
-      0%   { opacity: 0; transform: translateY(105%); filter: blur(20px); }
-      30%  { opacity: 1; }
-      100% { opacity: 1; transform: translateY(0); filter: blur(0); }
-    }
-
-    .hero-btn {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      color: #ffffff;
-      background-color: #000000;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      padding: 1.3rem 2.5rem;
-      border-radius: 9999px;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.9rem;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
-      outline: none;
-    }
-
-    .hero-btn:hover {
-      background-color: #ffffff;
-      color: #000000;
-      border-color: #ffffff;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
-    }
-
-    .hero-btn:active {
-      transform: translateY(0);
-    }
-
-    /* Blinking dot inside button with expanding wave */
-    .blinking-dot {
-      width: 10px;
-      height: 10px;
-      background-color: #39FF14;
-      border-radius: 50%;
-      position: relative;
-      display: inline-block;
-      animation: pulse-glow 2s infinite ease-in-out;
-    }
-
-    .blinking-dot::after {
-      content: '';
-      position: absolute;
-      top: -5px; left: -5px; right: -5px; bottom: -5px;
-      background-color: rgba(57, 255, 20, 0.45);
-      border-radius: 50%;
-      animation: wave-expand 2s infinite ease-in-out;
-    }
-
-    @keyframes pulse-glow {
-      0%, 100% {
-        opacity: 0.5;
-        transform: scale(0.85);
-        box-shadow: 0 0 4px rgba(57, 255, 20, 0.3);
-      }
-      50% {
-        opacity: 1;
-        transform: scale(1.1);
-        box-shadow: 0 0 12px rgba(57, 255, 20, 0.9);
-      }
-    }
-
-    @keyframes wave-expand {
-      0%   { transform: scale(0.6); opacity: 0.9; }
-      100% { transform: scale(2.3); opacity: 0; }
-    }
-
-    /* 3. Footer block (fixed, vertically centered at 50vh) */
-    .footer-container {
-      position: fixed;
-      top: 50vh;
-      left: 20px;
-      right: 20px;
-      width: calc(100vw - 40px);
-      transform: translateY(-50%);
-      z-index: 3;
-      display: flex;
-      flex-direction: column;
-      pointer-events: auto;
-    }
-
-    .footer-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      width: 100%;
-      padding: 0 5px;
-    }
-
-    .footer-title {
-      font-family: 'General Sans', -apple-system, sans-serif;
-      font-size: 1.4rem;
-      font-weight: 400;
-      color: #ffffff;
-      letter-spacing: -0.015em;
-      margin: 0;
-    }
-
-    .footer-title.quote {
-      text-transform: none;
-    }
-
-    .footer-divider {
-      border: none;
-      height: 1px;
-      background-color: rgba(255, 255, 255, 0.2);
-      margin: 1.6rem 0;
-      width: 100%;
-    }
-
-    .footer-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      padding: 0 5px;
-    }
-
-    .footer-socials {
-      display: flex;
-      gap: 1.25rem;
-      align-items: center;
-      flex: 1;
-    }
-
-    .social-icon {
-      color: rgba(255, 255, 255, 0.55);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-    }
-
-    .social-icon:hover {
-      color: #ffffff;
-      transform: translateY(-2px);
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 2.8rem;
-      justify-content: center;
-      align-items: center;
-      flex: 2;
-    }
-
-    .footer-link {
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 400;
-      color: #ffffff;
-      text-decoration: none;
-      letter-spacing: 0.03em;
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-
-    .footer-link:hover {
-      opacity: 0.75;
-      transform: translateY(-1px);
-    }
-
-    .footer-copyright {
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 400;
-      color: rgba(255, 255, 255, 0.45);
-      text-align: right;
-      flex: 1;
-      letter-spacing: 0.02em;
-    }
-
-    /* 4. Giant "Loopstack" wordmark (pinned to bottom) */
-    .footer-logo-wrap {
-      position: fixed;
-      bottom: 20px;
-      left: 0;
-      right: 0;
-      width: 100%;
-      padding: 0 20px;
-      box-sizing: border-box;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 3;
-      margin: 0;
-      pointer-events: none;
-    }
-
-    .footer-logo-text {
-      font-family: 'General Sans', -apple-system, sans-serif;
-      font-size: 21.9vw;
-      font-weight: 400;
-      color: #ffffff;
-      letter-spacing: -0.03em;
-      margin-right: -0.03em;
-      transform: translateX(-20px);
-      line-height: 0.8;
-      margin-top: 0;
-      margin-bottom: 0;
-      margin-left: 0;
-      text-align: center;
-      width: 100%;
-      pointer-events: none;
-      opacity: 0.95;
-      text-shadow: none;
-      white-space: nowrap;
-    }
-
-    /* Wordmark letter-by-letter reveal mask */
-    .footer-logo-text .letter-wrapper {
-      display: inline-block;
-      overflow: hidden;
-      vertical-align: bottom;
-      line-height: 0.8;
-    }
-
-    .footer-logo-text .letter-inner {
-      display: inline-block;
-      opacity: 0;
-      transform: translateX(-105%);
-      filter: blur(20px);
-      animation: letter-reveal-mask 1.2s cubic-bezier(0.05, 0.9, 0.1, 1) forwards;
-    }
-
-    @keyframes letter-reveal-mask {
-      0%   { opacity: 0; transform: translateX(-105%); filter: blur(20px); }
-      25%  { opacity: 1; }
-      100% { opacity: 0.95; transform: translateX(0); filter: blur(0); }
-    }
-
-    /* 5. Background flower video */
-    .video-container {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100vw;
-      height: 90vh;
-      overflow: hidden;
-      z-index: -1;
-    }
-
-    #bg-video {
-      width: 100%;
-      height: 110%;
-      object-fit: cover;
-      display: block;
-      transform: translateY(0%);
-    }
-
-    /* 6. Custom cursor elements */
-    .cursor-ring-outline {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 48px;
-      height: 48px;
-      border: 1.5px solid rgba(255, 255, 255, 0.45);
-      border-radius: 50%;
-      z-index: 99998;
-      pointer-events: none;
-      transform: translate(-50%, -50%) scale(0);
-      opacity: 0;
-      will-change: transform, opacity;
-      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                  border-color 0.4s ease;
-    }
-
-    .cursor-ring-outline.active { opacity: 1; }
-    .cursor-ring-outline.expanded {
-      border-color: rgba(255, 255, 255, 0.15);
-    }
-
-    .glass-cursor-card {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 99999;
-      pointer-events: none;
-      padding: 0.75rem 1.5rem;
-      background: rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 9999px;
-      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
-      transform: translate(-50%, -50%) scale(0);
-      opacity: 0;
-      will-change: transform, opacity;
-      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                  background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                  border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                  box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .glass-cursor-card.active { opacity: 1; }
-
-    .cursor-card-text {
-      font-family: 'General Sans', -apple-system, sans-serif;
-      font-size: 0.85rem;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      color: #39FF14;
-      text-transform: uppercase;
-      white-space: nowrap;
-      text-shadow: 0 0 8px rgba(57, 255, 20, 0.45);
-    }
-
-    .cursor-card-text .text-white {
-      color: #ffffff;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-    }
-
-    /* =========================================================
-       7. INTEGRATED KURAMA CHATBOT MODAL (IN PAGE 2)
-       ========================================================= */
-    .kurama-modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      visibility: hidden;
-      transition: opacity 0.45s var(--ease-smooth), visibility 0.45s;
-    }
-
-    .kurama-modal-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-      visibility: visible;
-      cursor: default;
-    }
-
-    .kurama-modal-card {
-      width: min(840px, calc(100vw - 40px));
-      height: min(82vh, 800px);
-      border-radius: 28px;
-      background: rgba(12, 13, 18, 0.88);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      box-shadow:
-        0 30px 100px rgba(0, 0, 0, 0.9),
-        0 0 40px rgba(57, 255, 20, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.18);
-      backdrop-filter: blur(32px) saturate(180%);
-      -webkit-backdrop-filter: blur(32px) saturate(180%);
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      overflow: hidden;
-      transform: translateY(24px) scale(0.96);
-      transition: transform 0.45s var(--ease-smooth);
-    }
-
-    .kurama-modal-overlay.open .kurama-modal-card {
-      transform: translateY(0) scale(1);
-    }
-
-    .kurama-modal-header {
-      padding: 18px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .kurama-modal-title {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .kurama-mini-orb {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #39FF14 0%, #0e8c05 45%, #053302 90%);
-      box-shadow: 0 0 16px rgba(57, 255, 20, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
-    }
-
-    .kurama-title-text {
-      font-family: var(--font-general);
       font-size: 15px;
       font-weight: 600;
-      letter-spacing: 0.12em;
-      color: #ffffff;
-      text-transform: uppercase;
-    }
-
-    .kurama-sub-text {
-      font-family: var(--font-outfit);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.14em;
-      color: rgba(255, 255, 255, 0.45);
-      text-transform: uppercase;
-    }
-
-    .modal-header-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .btn-close-modal {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 18px;
-      transition: all 0.25s var(--ease-smooth);
-    }
-
-    .btn-close-modal:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: scale(1.08);
-    }
-
-    /* Modal Chat Messages Body */
-    .kurama-modal-body {
-      padding: 24px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .kurama-modal-body::-webkit-scrollbar {
-      width: 6px;
-    }
-    .kurama-modal-body::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.16);
+      padding: 13px 22px;
       border-radius: 999px;
-    }
-
-    /* Empty state welcoming user */
-    .kurama-empty-state {
-      margin: auto;
-      text-align: center;
-      max-width: 580px;
-      padding: 20px 0;
-    }
-
-    .kurama-empty-tag {
-      font-family: var(--font-general);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.2em;
-      color: #39FF14;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-
-    .kurama-empty-title {
-      font-family: var(--font-playfair);
-      font-size: 2.2rem;
-      font-weight: 400;
-      color: #ffffff;
-      line-height: 1.2;
-      margin-bottom: 8px;
-    }
-
-    .kurama-empty-sub {
-      font-family: var(--font-outfit);
-      font-size: 0.95rem;
-      color: rgba(255, 255, 255, 0.6);
-      margin-bottom: 24px;
-    }
-
-    /* Quick category chips */
-    .kurama-chips-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 9px;
-      justify-content: center;
-    }
-
-    .kurama-chip {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      color: #ffffff;
-      padding: 8px 16px;
-      border-radius: 999px;
-      font-family: var(--font-outfit);
-      font-size: 0.85rem;
-      font-weight: 400;
+      border: 1px solid transparent;
       cursor: pointer;
-      transition: all 0.25s var(--ease-smooth);
+      transition: transform .18s ease, box-shadow .25s ease, background .2s ease, border-color .2s ease;
+      white-space: nowrap;
     }
-
-    .kurama-chip:hover {
-      background: rgba(57, 255, 20, 0.12);
-      border-color: #39FF14;
-      color: #39FF14;
+    .btn svg {
+      width: 17px;
+      height: 17px;
+    }
+    .btn-primary {
+      color: var(--accent-ink);
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      box-shadow: 0 10px 30px -8px rgba(93, 240, 168, .55), inset 0 1px 0 rgba(255, 255, 255, .4);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 38px -8px rgba(93, 240, 168, .7);
+    }
+    .btn-outline {
+      color: var(--ink);
+      background: rgba(255, 255, 255, .04);
+      border-color: var(--line-strong);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, .09);
       transform: translateY(-2px);
     }
+    .btn-ghost {
+      color: var(--ink);
+      background: rgba(255, 255, 255, .05);
+      border-color: var(--line-strong);
+      padding: 9px 18px;
+    }
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, .1);
+    }
 
-    /* Chat Messages Rows */
-    .chat-row {
+    /* SECTION 1: HERO */
+    .hero {
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      animation: msg-appear 0.4s var(--ease-smooth);
-    }
-
-    @keyframes msg-appear {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .chat-row.user {
-      align-items: flex-end;
-    }
-
-    .chat-row.bot {
-      align-items: flex-start;
-    }
-
-    .chat-bubble-user {
-      max-width: 80%;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      padding: 12px 18px;
-      border-radius: 18px 18px 4px 18px;
-      color: #ffffff;
-      font-family: var(--font-outfit);
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-
-    .chat-bubble-bot {
-      max-width: 92%;
-      background: rgba(20, 22, 30, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 20px;
-      border-radius: 18px 18px 18px 4px;
-      color: #ffffff;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .bot-reply-text {
-      font-family: var(--font-outfit);
-      font-size: 0.95rem;
-      line-height: 1.6;
-      color: rgba(255, 255, 255, 0.88);
-    }
-
-    /* Swatches Grid */
-    .swatches-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-      gap: 10px;
-      width: 100%;
-    }
-
-    .swatch-card {
-      border-radius: 14px;
-      overflow: hidden;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      cursor: pointer;
-      transition: all 0.25s var(--ease-smooth);
-    }
-
-    .swatch-card:hover {
-      transform: translateY(-3px);
-      border-color: #39FF14;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    .swatch-color-box {
-      height: 64px;
-      width: 100%;
+      justify-content: space-between;
       position: relative;
+      background: radial-gradient(125% 62% at 50% -10%, rgba(4,6,15,.82) 0%, rgba(4,6,15,.28) 44%, transparent 68%);
     }
 
-    .swatch-meta {
-      padding: 8px 10px;
+    .nav {
+      max-width: var(--maxw);
+      width: 100%;
+      margin: 0 auto;
+      padding: 22px 24px;
       display: flex;
-      flex-direction: column;
-      gap: 2px;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 10;
     }
-
-    .swatch-role {
-      font-family: var(--font-general);
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    .swatch-hex {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-    /* Contrast Audit Card */
-    .contrast-badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding-top: 6px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .contrast-tag {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #ffffff;
+    .brand {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 9px;
+      font-weight: 800;
+      font-size: 19px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
     }
-
-    .contrast-tag.pass {
-      color: #39FF14;
-      border-color: rgba(57, 255, 20, 0.3);
-      background: rgba(57, 255, 20, 0.08);
+    .brand-mark {
+      color: var(--accent);
+      font-size: 14px;
+      transform: translateY(-1px);
     }
-
-    /* Actions row (Copy CSS / JSON) */
-    .palette-actions {
+    .nav-links {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 30px;
+      font-size: 14.5px;
+      color: var(--muted);
+    }
+    .nav-links a {
+      transition: color .2s ease;
+    }
+    .nav-links a:hover {
+      color: var(--ink);
+    }
+
+    .hero-inner {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+      transform: translateY(-10vh);
+    }
+    .hero-title {
+      font-size: clamp(34px, 5.2vw, 62px);
+      font-weight: 800;
+      line-height: 1.04;
+      letter-spacing: -.03em;
+      max-width: 15ch;
+      text-shadow: 0 2px 50px rgba(0, 0, 0, .55);
+    }
+    .hero-title em {
+      font-style: normal;
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+    .hero-sub {
+      margin-top: 24px;
+      max-width: 560px;
+      font-size: clamp(16px, 2vw, 19px);
+      line-height: 1.6;
+      color: var(--muted);
+      text-shadow: 0 1px 20px rgba(0, 0, 0, .6);
+    }
+    .hero-actions {
+      margin-top: 38px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: center;
       flex-wrap: wrap;
     }
 
-    .btn-palette-action {
-      font-family: var(--font-outfit);
-      font-size: 11px;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.7);
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 6px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s var(--ease-smooth);
+    .logos {
+      text-align: center;
+      padding: 0 24px clamp(36px, 6vw, 64px);
     }
-
-    .btn-palette-action:hover {
-      background: rgba(255, 255, 255, 0.15);
-      color: #ffffff;
+    .logos-label {
+      display: block;
+      font-size: 12px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--muted-2);
+      margin-bottom: 24px;
+      font-weight: 600;
     }
-
-    /* Chat Input Bar */
-    .kurama-modal-footer {
-      padding: 16px 24px 20px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(10, 10, 14, 0.95);
-    }
-
-    .kurama-input-form {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 999px;
-      padding: 6px 8px 6px 20px;
-      transition: border-color 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth);
-    }
-
-    .kurama-input-form:focus-within {
-      border-color: #39FF14;
-      box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
-    }
-
-    .kurama-text-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: #ffffff;
-      font-family: var(--font-outfit);
-      font-size: 0.95rem;
-    }
-
-    .kurama-text-input::placeholder {
-      color: rgba(255, 255, 255, 0.38);
-    }
-
-    .btn-send-prompt {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: #39FF14;
-      border: none;
-      color: #000000;
+    .logos-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      transition: all 0.25s var(--ease-smooth);
+      gap: clamp(24px, 5vw, 56px);
+      flex-wrap: wrap;
     }
-
-    .btn-send-prompt:hover {
-      transform: scale(1.08);
-      box-shadow: 0 0 15px rgba(57, 255, 20, 0.6);
+    .logo {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--muted-2);
+      opacity: .8;
+      letter-spacing: .02em;
+      transition: color .2s ease, opacity .2s ease;
+      cursor: default;
     }
-
-    /* Toast Notification for Hex Copies */
-    .toast-pill {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%) translateY(50px);
-      opacity: 0;
-      pointer-events: none;
-      background: rgba(20, 20, 24, 0.92);
-      border: 1px solid #39FF14;
-      color: #ffffff;
-      padding: 10px 22px;
-      border-radius: 999px;
-      font-family: var(--font-outfit);
-      font-size: 0.85rem;
-      font-weight: 500;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(57, 255, 20, 0.25);
-      z-index: 100000;
-      transition: all 0.35s var(--ease-smooth);
-    }
-
-    .toast-pill.show {
-      transform: translateX(-50%) translateY(0);
+    .logo:hover {
+      color: var(--ink);
       opacity: 1;
     }
 
-    /* Floating Overview Button in bottom-right corner */
-    .floating-overview-btn {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 100;
+    /* SECTION 2: FEATURES */
+    .features {
+      background: transparent;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    .card {
+      position: relative;
+      overflow: hidden;
+      padding: 30px;
+      border-radius: var(--radius);
+      background: var(--glass);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: transform .25s ease, background .25s ease, border-color .25s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--line-strong);
+      background: var(--glass-2);
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(120% 120% at 0% 0%, rgba(93, 240, 168, .08), transparent 45%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    .card:hover::before {
+      opacity: 1;
+    }
+    .card-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      color: var(--accent);
+      background: rgba(93, 240, 168, .1);
+      border: 1px solid rgba(93, 240, 168, .18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .card-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+    .card h3 {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -.01em;
+    }
+    .card p {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* SECTION 3: SHOWCASE + STATS */
+    .showcase {
+      background: transparent;
+    }
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr;
+      gap: clamp(36px, 6vw, 72px);
+      align-items: center;
+    }
+    .showcase-copy h2 {
+      margin-bottom: 18px;
+    }
+    .showcase-copy p {
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.65;
+      margin-bottom: 32px;
+      text-shadow: 0 1px 20px rgba(0, 0, 0, .5);
+    }
+
+    .dashboard {
+      position: relative;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      background: var(--glass-2);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .dashboard::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(160deg, rgba(93, 240, 168, .35), transparent 40%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .dash-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .dash-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+    .dash-live {
       display: inline-flex;
       align-items: center;
-      gap: 9px;
-      padding: 10px 18px;
-      border-radius: 999px;
-      background: rgba(12, 16, 28, 0.88);
-      border: 1px solid rgba(93, 240, 168, 0.35);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      color: #ffffff;
-      font-family: var(--font-outfit);
-      font-size: 0.88rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-decoration: none;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(93, 240, 168, 0.15);
-      cursor: pointer;
-      transition: all 0.3s var(--ease-smooth);
+      gap: 7px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
     }
-
-    .floating-overview-btn:hover {
-      background: rgba(16, 24, 42, 0.95);
-      border-color: #5df0a8;
-      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.7), 0 0 30px rgba(93, 240, 168, 0.35);
-      transform: translateY(-2px);
-      color: #5df0a8;
-    }
-
-    .overview-pulse-dot {
+    .dash-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #5df0a8;
-      box-shadow: 0 0 10px #5df0a8;
-      animation: pulse-glow 2s infinite ease-in-out;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
     }
-
-    .modal-overview-link {
-      display: inline-flex;
+    .dash-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      height: 150px;
+      background: rgba(0, 0, 0, .25);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 24px;
+    }
+    @keyframes grow {
+      0% { transform: scaleY(0); }
+      100% { transform: scaleY(1); }
+    }
+    .dash-bar {
+      flex: 1;
+      border-radius: 6px 6px 3px 3px;
+      background: linear-gradient(180deg, var(--accent), rgba(47, 211, 138, .25));
+      transform-origin: bottom;
+      animation: grow 0.8s cubic-bezier(.22, .7, .2, 1) forwards;
+    }
+    .dash-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .dash-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
       align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(93, 240, 168, 0.1);
-      border: 1px solid rgba(93, 240, 168, 0.28);
-      color: #5df0a8;
-      font-family: var(--font-outfit);
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s var(--ease-smooth);
+      gap: 14px;
+      font-size: 13.5px;
+      color: var(--muted);
     }
-    .modal-overview-link:hover {
-      background: rgba(93, 240, 168, 0.2);
-      border-color: #5df0a8;
-      transform: translateY(-1px);
+    .dash-track {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .06);
+      overflow: hidden;
+      position: relative;
+    }
+    @keyframes fillRow {
+      0% { width: 0; }
+      100% { width: var(--w); }
+    }
+    .dash-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent-2), var(--accent));
+      animation: fillRow 0.9s cubic-bezier(.22, .7, .2, 1) forwards 0.3s;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 860px) {
-      .footer-container {
-        position: relative;
-        top: auto;
-        transform: none;
-        margin-top: 30px;
-        width: 100%;
-        left: 0;
-        right: 0;
-        padding: 0 20px;
+    .stats {
+      margin-top: clamp(56px, 8vw, 96px);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .stat {
+      text-align: center;
+      padding: 30px 18px;
+      border-radius: var(--radius);
+      background: var(--glass);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .stat-value {
+      font-size: clamp(30px, 4vw, 44px);
+      font-weight: 800;
+      line-height: 1;
+      background: linear-gradient(180deg, #fff, var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    /* SECTION 4: CTA + FOOTER */
+    .cta {
+      background: transparent;
+    }
+    .cta-card {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+      padding: clamp(48px, 7vw, 80px) clamp(28px, 5vw, 64px);
+      border-radius: var(--radius-lg);
+      background: radial-gradient(120% 140% at 50% 0%, rgba(93, 240, 168, .12), transparent 55%), var(--glass-2);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .cta-card p {
+      margin: 18px auto 34px;
+      max-width: 580px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.6;
+    }
+    .cta-card .hero-actions {
+      margin-top: 0;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 48px;
+      flex-wrap: wrap;
+      margin-top: clamp(64px, 9vw, 110px);
+      padding-top: 48px;
+      border-top: 1px solid var(--line);
+    }
+    .footer-brand p {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 320px;
+      line-height: 1.6;
+    }
+    .footer-cols {
+      display: flex;
+      gap: 64px;
+      flex-wrap: wrap;
+    }
+    .footer-col h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: var(--muted-2);
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .footer-col a {
+      font-size: 14px;
+      color: var(--muted);
+      transition: color .2s ease;
+    }
+    .footer-col a:hover {
+      color: var(--ink);
+    }
+
+    .copyright {
+      text-align: center;
+      margin-top: 56px;
+      font-size: 13px;
+      color: var(--muted-2);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 980px) {
+      .feature-grid { grid-template-columns: repeat(2, 1fr); }
+      .showcase-grid { grid-template-columns: 1fr; text-align: center; }
+      .showcase-copy { margin: 0 auto; }
+      .showcase-copy .eyebrow { margin-left: auto; margin-right: auto; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px) {
+      .nav-links { display: none; }
+      .nav { padding: 18px 20px; }
+      .section { padding: clamp(64px, 16vw, 110px) 20px; }
+    }
+    @media (max-width: 560px) {
+      .feature-grid { grid-template-columns: 1fr; }
+      .dash-row { grid-template-columns: 90px 1fr !important; }
+      .hero-actions .btn { flex: 1 1 100%; width: 100%; justify-content: center; }
+      .cta-card { padding: 40px 22px !important; }
+      .footer { flex-direction: column; gap: 32px; }
+      .footer-cols { width: 100%; justify-content: space-between; }
+    }
+    @media (max-width: 380px) {
+      .stats { grid-template-columns: 1fr; }
+      .logos-row { gap: 18px; }
+      .logo { font-size: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      [data-reveal] {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
       }
-      .footer-logo-text {
-        font-size: 20vw;
+      .dash-bar {
+        animation: none !important;
+        transform: none !important;
       }
-      .hero-title {
-        font-size: 2.2rem;
+      .dash-fill {
+        animation: none !important;
+        width: var(--w) !important;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- =========================================================
-       VIEW 1: 3D SPHERE FIELD (LANDING / HERO CANVAS)
-       ========================================================= -->
-  <div id="view-canvas" class="view-container active-view">
-    <div id="bgGradient"></div>
-    <div id="webglWrap">
-      <canvas id="webgl"></canvas>
-    </div>
+  <!-- Fixed WebGL planet canvas behind everything -->
+  <canvas class="planet-canvas" id="planetCanvas"></canvas>
 
-    <div class="canvas-shell">
-      <!-- Header -->
-      <header class="canvas-header">
-        <div class="canvas-brand">KURAMA</div>
-        <div class="canvas-status">
-          <span class="status-dot-blue"></span>
-          <span>COLOR INTELLIGENCE / ONLINE</span>
-        </div>
-        <div class="canvas-actions">
-          <button id="btn-canvas-reset" class="canvas-pill-btn" aria-label="Reset 3D Scene">Reset</button>
-        </div>
-      </header>
-
-      <!-- Middle Hero Section with "Get Started" CTA -->
-      <section class="landing-hero-center">
-        <div class="landing-kicker">
-          <span class="status-dot-blue"></span>
-          <span>AI COLOR INTELLIGENCE</span>
-        </div>
-        <h1 class="landing-title">Autonomous Color Systems</h1>
-        <p class="landing-desc">Curated chromatic palettes with real-time WebGL physics and WCAG 2.1 compliance auditing.</p>
-        <button id="btn-get-started" class="btn-get-started" aria-label="Get Started">
-          <span class="btn-text">Get Started</span>
-          <svg class="btn-arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
-      </section>
-
-      <!-- Footer Info -->
-      <footer class="canvas-footer">
-        KURAMA / AI COLOR INTELLIGENCE / 2026
-      </footer>
-    </div>
-  </div>
-
-  <!-- =========================================================
-       VIEW 2: LOOPSTACK THEME SPECIFICATION
-       ========================================================= -->
-  <div id="view-loopstack" class="view-container hidden-view">
-    <!-- Top gradient overlay -->
-    <img src="https://api.getlayers.ai/storage/v1/object/public/public/assets/loopstack-f8c64439bf/black_gradient.svg" alt="Top Gradient" id="top-gradient">
-
-    <!-- Loopstack Top Bar -->
-    <header class="loopstack-nav">
-      <button id="btn-back-to-canvas" class="loopstack-nav-btn" aria-label="Back to 3D Field">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12"></line>
-          <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        <span>3D Canvas</span>
-      </button>
-
-      <button id="kurama-status-toggle" class="kurama-status-badge" aria-label="Open Kurama AI Chat">
-        <span class="badge-dot"></span>
-        <span>KURAMA AI ASSISTANT</span>
-      </button>
-    </header>
-
-    <!-- Hero content (headline + button) -->
-    <main class="hero-content">
-      <h1 class="hero-title">Apply Now to be part <br> of the closed beta</h1>
-      <button class="hero-btn" id="loopstack-hero-btn" aria-label="Start a Chat">
-        <span class="btn-text">Start a Chat</span>
-        <span class="blinking-dot"></span>
-      </button>
-    </main>
-
-    <!-- Footer block (fixed, vertically centered at 50vh) -->
-    <footer class="footer-container">
-      <div class="footer-top">
-        <h2 class="footer-title">Stay in Touch</h2>
-        <h2 class="footer-title quote">Think. Build. Repeat.</h2>
-      </div>
-
-      <hr class="footer-divider">
-
-      <div class="footer-bottom">
-        <div class="footer-socials">
-          <a href="#" aria-label="LinkedIn" class="social-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-          </a>
-          <a href="#" aria-label="X" class="social-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
-          </a>
-          <a href="#" aria-label="Instagram" class="social-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-          </a>
-        </div>
-
-        <nav class="footer-links">
-          <a href="#about" class="footer-link">About</a>
-          <a href="#features" class="footer-link">Features</a>
-          <a href="#pricing" class="footer-link">Pricing</a>
-          <a href="#contact" class="footer-link">Contact</a>
-        </nav>
-
-        <div class="footer-copyright">
-          © 2026 Kurama
-        </div>
-      </div>
-    </footer>
-
-    <!-- Giant "Kurama" wordmark (pinned to bottom) -->
-    <div class="footer-logo-wrap">
-      <h2 class="footer-logo-text">Kurama</h2>
-    </div>
-
-    <!-- Background flower video -->
-    <div class="video-container">
-      <video autoplay muted loop playsinline id="bg-video">
-        <source src="https://api.getlayers.ai/storage/v1/object/public/public/assets/loopstack-f8c64439bf/flower.mp4" type="video/mp4">
-        Ваш браузер не поддерживает видео.
-      </video>
-    </div>
-
-    <!-- Floating Overview Button pinned to bottom-right of chat page -->
-    <a href="overview.html" class="floating-overview-btn" id="btn-overview-page" aria-label="Platform Overview">
-      <span class="overview-pulse-dot"></span>
-      <span>Overview</span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="7" y1="17" x2="17" y2="7"></line>
-        <polyline points="7 7 17 7 17 17"></polyline>
-      </svg>
-    </a>
-
-    <!-- Custom cursor elements -->
-    <div id="cursor-ring" class="cursor-ring-outline"></div>
+  <div class="page" id="top">
 
     <!-- =========================================================
-         INTEGRATED KURAMA BOT MODAL
+         SECTION 1: HERO + LOGOS
          ========================================================= -->
-    <div id="kurama-modal" class="kurama-modal-overlay">
-      <div class="kurama-modal-card">
-        <!-- Header -->
-        <div class="kurama-modal-header">
-          <div class="kurama-modal-title">
-            <div class="kurama-mini-orb"></div>
-            <div>
-              <div class="kurama-title-text">KURAMA</div>
-              <div class="kurama-sub-text">AI Color Intelligence</div>
-            </div>
-          </div>
-          <div class="modal-header-actions">
-            <a href="overview.html" class="modal-overview-link" title="Open Platform Overview">
-              <span>Overview</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7"></line>
-                <polyline points="7 7 17 7 17 17"></polyline>
-              </svg>
-            </a>
-            <div class="canvas-status" style="background: rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.3); color: #39FF14;">
-              <span class="badge-dot" style="background:#39FF14; box-shadow: 0 0 10px #39FF14; width:6px; height:6px; border-radius:50%;"></span>
-              <span>ONLINE</span>
-            </div>
-            <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Kurama Dialog">×</button>
-          </div>
+    <header class="hero">
+      <nav class="nav">
+        <a href="#top" class="brand">
+          <span class="brand-mark">▲</span>
+          <span>Ascend</span>
+        </a>
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#solutions">Solutions</a>
+          <a href="#cta">Plans</a>
+          <a href="#cta">Learning</a>
         </div>
+        <button class="btn btn-ghost" type="button">Sign Up</button>
+      </nav>
 
-        <!-- Chat Body -->
-        <div class="kurama-modal-body" id="kurama-chat-body">
-          <div class="kurama-empty-state" id="kurama-empty-state">
-            <div class="kurama-empty-tag">COLOR SYSTEM GENERATOR</div>
-            <h2 class="kurama-empty-title">Describe what you're designing.</h2>
-            <p class="kurama-empty-sub">I'll build an accessible, production-ready color system around it.</p>
-
-            <div class="kurama-chips-grid">
-              <button class="kurama-chip" data-prompt="Create a professional color palette for a modern website">Website</button>
-              <button class="kurama-chip" data-prompt="Create a clean color palette for a mobile app">Mobile App</button>
-              <button class="kurama-chip" data-prompt="Create a dark AI dashboard color palette">Dashboard</button>
-              <button class="kurama-chip" data-prompt="Create a minimal luxury portfolio palette">Portfolio</button>
-              <button class="kurama-chip" data-prompt="Create a strong modern brand identity palette">Brand</button>
-              <button class="kurama-chip" data-prompt="Create a dark tactical gaming UI color palette">Gaming</button>
-              <button class="kurama-chip" data-prompt="Create a premium SaaS product color palette">SaaS</button>
-              <button class="kurama-chip" data-prompt="Create a warm modern e-commerce color palette">E-commerce</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Chat Input Footer -->
-        <div class="kurama-modal-footer">
-          <form class="kurama-input-form" id="kurama-chat-form">
-            <input type="text" id="kurama-input" class="kurama-text-input" placeholder="Describe a style, product, brand, or enter a hex code..." autocomplete="off">
-            <button type="submit" class="btn-send-prompt" aria-label="Send prompt">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </button>
-          </form>
+      <div class="hero-inner">
+        <h1 class="hero-title" data-reveal style="--rd: 60ms">
+          Scale Smarter,<br>Not <em>Harder</em>
+        </h1>
+        <p class="hero-sub" data-reveal style="--rd: 180ms">
+          Drive your funnel forward with clever workflows, analytics, and seamless lead management — all in one immersive command center.
+        </p>
+        <div class="hero-actions" data-reveal style="--rd: 300ms">
+          <button class="btn btn-primary" type="button">
+            <span>Start Free Right Now</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14"></path>
+              <path d="m12 5 7 7-7 7"></path>
+            </svg>
+          </button>
+          <button class="btn btn-outline" type="button">Schedule a Consult</button>
         </div>
       </div>
-    </div>
+
+      <div class="logos" data-reveal style="--rd: 420ms">
+        <span class="logos-label">Trusted by fast-moving teams</span>
+        <div class="logos-row">
+          <span class="logo">Nimbus</span>
+          <span class="logo">Pluma</span>
+          <span class="logo">Citrus</span>
+          <span class="logo">Spider</span>
+          <span class="logo">Helod</span>
+          <span class="logo">Vertx</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- =========================================================
+         SECTION 2: FEATURES
+         ========================================================= -->
+    <section class="section features" id="features">
+      <div class="section-head">
+        <span class="eyebrow" data-reveal>Everything in orbit</span>
+        <h2 data-reveal style="--rd: 80ms">One platform to run the entire revenue engine</h2>
+        <p data-reveal style="--rd: 160ms">
+          Stop stitching tools together. Ascend unifies capture, automation, and insight into a single surface your whole team actually enjoys using.
+        </p>
+      </div>
+
+      <div class="feature-grid">
+        <!-- 1. Clever workflows -->
+        <div class="card" data-reveal style="--rd: 0ms">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="6" height="6" rx="2"></rect>
+              <rect x="15" y="15" width="6" height="6" rx="2"></rect>
+              <path d="M6 9v3a3 3 0 0 0 3 3h3"></path>
+            </svg>
+          </div>
+          <h3>Clever workflows</h3>
+          <p>Automate every hand-off with visual, branching pipelines that move deals forward while you sleep.</p>
+        </div>
+
+        <!-- 2. Live analytics -->
+        <div class="card" data-reveal style="--rd: 90ms">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19V5"></path>
+              <path d="M4 19h16"></path>
+              <path d="M8 16v-4"></path>
+              <path d="M13 16V8"></path>
+              <path d="M18 16v-7"></path>
+            </svg>
+          </div>
+          <h3>Live analytics</h3>
+          <p>Real-time dashboards turn raw funnel data into the one number that tells you what to do next.</p>
+        </div>
+
+        <!-- 3. Seamless leads -->
+        <div class="card" data-reveal style="--rd: 180ms">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <h3>Seamless leads</h3>
+          <p>Capture, score, and route every lead automatically — no spreadsheet, no leak, no lag.</p>
+        </div>
+
+        <!-- 4. Instant triggers -->
+        <div class="card" data-reveal style="--rd: 270ms">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"></path>
+            </svg>
+          </div>
+          <h3>Instant triggers</h3>
+          <p>Fire actions across your stack the moment intent appears, in milliseconds not minutes.</p>
+        </div>
+
+        <!-- 5. Enterprise-grade -->
+        <div class="card" data-reveal style="--rd: 360ms">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+          </div>
+          <h3>Enterprise-grade</h3>
+          <p>SOC 2, SSO, and granular roles baked in — security that scales quietly with your team.</p>
+        </div>
+
+        <!-- 6. Global by default -->
+        <div class="card" data-reveal style="--rd: 450ms">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M2 12h20"></path>
+              <path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"></path>
+            </svg>
+          </div>
+          <h3>Global by default</h3>
+          <p>Multi-region, multi-currency, and low-latency everywhere your customers happen to be.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SECTION 3: SHOWCASE + STATS
+         ========================================================= -->
+    <section class="section showcase" id="solutions">
+      <div class="showcase-grid">
+        <!-- Left copy -->
+        <div class="showcase-copy">
+          <span class="eyebrow" data-reveal>Built for momentum</span>
+          <h2 data-reveal style="--rd: 90ms">See the whole funnel move in real time</h2>
+          <p data-reveal style="--rd: 180ms">
+            Every stage, every signal, every dollar — rendered live. Ascend gives operators the altitude to spot what’s working and the controls to double down instantly.
+          </p>
+          <button class="btn btn-primary" type="button" data-reveal style="--rd: 270ms">
+            <span>Explore the platform</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14"></path>
+              <path d="m12 5 7 7-7 7"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Right dashboard mock -->
+        <div class="dashboard" data-reveal style="--rd: 160ms">
+          <div class="dash-top">
+            <span class="dash-title">Pipeline · Q3</span>
+            <div class="dash-live">
+              <span class="dash-dot"></span>
+              <span>Live</span>
+            </div>
+          </div>
+
+          <!-- 7 animated bars: heights 62, 88, 47, 95, 71, 80, 58 (%) -->
+          <div class="dash-bars">
+            <div class="dash-bar" style="height: 62%; animation-delay: 0ms;"></div>
+            <div class="dash-bar" style="height: 88%; animation-delay: 90ms;"></div>
+            <div class="dash-bar" style="height: 47%; animation-delay: 180ms;"></div>
+            <div class="dash-bar" style="height: 95%; animation-delay: 270ms;"></div>
+            <div class="dash-bar" style="height: 71%; animation-delay: 360ms;"></div>
+            <div class="dash-bar" style="height: 80%; animation-delay: 450ms;"></div>
+            <div class="dash-bar" style="height: 58%; animation-delay: 540ms;"></div>
+          </div>
+
+          <!-- 4 animated progress rows -->
+          <div class="dash-rows">
+            <div class="dash-row">
+              <span>New leads</span>
+              <div class="dash-track">
+                <div class="dash-fill" style="--w: 90%;"></div>
+              </div>
+            </div>
+            <div class="dash-row">
+              <span>Qualified</span>
+              <div class="dash-track">
+                <div class="dash-fill" style="--w: 72%;"></div>
+              </div>
+            </div>
+            <div class="dash-row">
+              <span>In negotiation</span>
+              <div class="dash-track">
+                <div class="dash-fill" style="--w: 48%;"></div>
+              </div>
+            </div>
+            <div class="dash-row">
+              <span>Closed won</span>
+              <div class="dash-track">
+                <div class="dash-fill" style="--w: 34%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats">
+        <div class="stat" data-reveal style="--rd: 0ms">
+          <div class="stat-value">3.4×</div>
+          <div class="stat-label">Faster pipeline velocity</div>
+        </div>
+        <div class="stat" data-reveal style="--rd: 80ms">
+          <div class="stat-value">92%</div>
+          <div class="stat-label">Lead capture accuracy</div>
+        </div>
+        <div class="stat" data-reveal style="--rd: 160ms">
+          <div class="stat-value">11k+</div>
+          <div class="stat-label">Teams scaling on Ascend</div>
+        </div>
+        <div class="stat" data-reveal style="--rd: 240ms">
+          <div class="stat-value">$2.1B</div>
+          <div class="stat-label">Revenue influenced</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SECTION 4: CTA + FOOTER
+         ========================================================= -->
+    <section class="section cta" id="cta">
+      <div class="cta-card">
+        <span class="eyebrow" data-reveal style="--rd: 60ms">Ready when you are</span>
+        <h2 data-reveal style="--rd: 140ms">Put your growth on a new trajectory</h2>
+        <p data-reveal style="--rd: 220ms">
+          Launch in minutes. No credit card. Cancel anytime. Join thousands of teams compounding revenue on Ascend.
+        </p>
+        <div class="hero-actions" data-reveal style="--rd: 300ms">
+          <button class="btn btn-primary" type="button">
+            <span>Start Free Right Now</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14"></path>
+              <path d="m12 5 7 7-7 7"></path>
+            </svg>
+          </button>
+          <button class="btn btn-outline" type="button">Talk to Sales</button>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="footer-brand">
+          <a href="#top" class="brand">
+            <span class="brand-mark">▲</span>
+            <span>Ascend</span>
+          </a>
+          <p>The revenue command center for ambitious teams.</p>
+        </div>
+
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <ul>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#solutions">Solutions</a></li>
+              <li><a href="#cta">Plans</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <ul>
+              <li><a href="#top">About</a></li>
+              <li><a href="#top">Careers</a></li>
+              <li><a href="#top">Blog</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <ul>
+              <li><a href="#top">Privacy</a></li>
+              <li><a href="#top">Terms</a></li>
+              <li><a href="#top">Security</a></li>
+            </ul>
+          </div>
+        </div>
+      </footer>
+
+      <div class="copyright" id="copyrightYear">
+        <!-- Computed dynamically in JS -->
+      </div>
+    </section>
+
   </div>
 
-  <!-- Toast Notification -->
-  <div id="toast-pill" class="toast-pill">Copied to clipboard</div>
-
   <!-- =========================================================
-       MODULE LOGIC: THREE.JS + LOOPSTACK + KURAMA AI ENGINE
+       THREE.JS WEBGL EARTH ENGINE + LENIS SCROLL LOGIC
        ========================================================= -->
   <script type="module">
     import * as THREE from 'three';
+    import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+    import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+    import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+    import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+    import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
+    import { CopyShader } from 'three/examples/jsm/shaders/CopyShader.js';
+    import Lenis from 'https://unpkg.com/lenis@1.3.23/dist/lenis.mjs';
 
-    // =========================================================
-    // VIEW NAVIGATION CONTROLLER
-    // =========================================================
-    const viewCanvas = document.getElementById('view-canvas');
-    const viewLoopstack = document.getElementById('view-loopstack');
-    const btnGetStarted = document.getElementById('btn-get-started');
-    const btnBackToCanvas = document.getElementById('btn-back-to-canvas');
-    const toastPill = document.getElementById('toast-pill');
+    // Dynamic copyright year
+    document.getElementById('copyrightYear').textContent = `© ${new Date().getFullYear()} Ascend, Inc. — Built among the stars.`;
 
-    function showToast(message) {
-      toastPill.textContent = message;
-      toastPill.classList.add('show');
-      setTimeout(() => toastPill.classList.remove('show'), 2000);
+    // ---------------------------------------------------------
+    // 1. CONFIG (VERBATIM FROM SPECIFICATION)
+    // ---------------------------------------------------------
+    const CONFIG = {
+      rimColor: '#c1faff', rimPower: 2.4, nightLights: 10, terrainDepth: 0.33, terrainShade: 1.3,
+      oceanGlint: 0.45, oceanDeep: 0.12, oceanFlow: 3, oceanFlowSpeed: 0.8, oceanFlowScale: 2.1,
+      glowColor: '#3a6cff', glowIntensity: 3.35, planetRadius: 1.95, spin: 0.03, initRotation: 2.07,
+      tilt: 0.37, autoRotate: 0,
+      cloud1Height: 1.005, cloud1Opacity: 0.6, cloud1Spin: 0.06,
+      cloud2Height: 1.03, cloud2Opacity: 0.5, cloud2Spin: 0.14,
+      cloud3Height: 1.075, cloud3Opacity: 0.5, cloud3Spin: 0.1,
+      bgColor: '#040a1e', flameColor: '#3a6cff', flameColor2: '#c1faff', flameAmt: 0.15,
+      atmoColor: '#9fc4ff', atmoCount: 320, atmoSize: 22, atmoSpeed: 0.8,
+      starColor: '#cfe0ff', starCount: 1400, starSize: 1.6, starFlicker: 1,
+      markerColor: '#ffd27a', markerCount: 60, markerSize: 16, markerSpeed: 0.5,
+    };
+    const LAYERS = { NONE: 0, TORUS_SCENE: 1, BLOOM_SCENE: 2, ENTIRE_SCENE: 3 };
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function hexToVec3(hex) {
+      const c = new THREE.Color(hex);
+      return new THREE.Vector3(c.r, c.g, c.b);
     }
 
-    function switchView(viewName) {
-      if (viewName === 'loopstack') {
-        viewCanvas.classList.remove('active-view');
-        viewCanvas.classList.add('hidden-view');
+    const STOPS_X = [{ p: 0, v: 0 }, { p: 0.32, v: -3.1 }, { p: 0.64, v: 3.2 }, { p: 1, v: 0 }];
+    const STOPS_Y = [{ p: 0, v: -4.5 }, { p: 0.32, v: 0.55 }, { p: 0.64, v: 0.45 }, { p: 1, v: 0.15 }];
+    const STOPS_S = [{ p: 0, v: 2.15 }, { p: 0.32, v: 1.0 }, { p: 0.64, v: 0.92 }, { p: 1, v: 1.12 }];
 
-        viewLoopstack.classList.remove('hidden-view');
-        viewLoopstack.classList.add('active-view');
-        window.location.hash = '#loopstack';
-
-        // Play video if paused
-        const bgVideo = document.getElementById('bg-video');
-        if (bgVideo) bgVideo.play().catch(() => {});
-
-        // Re-trigger reveal animations
-        initLoopstackReveals();
-      } else {
-        viewLoopstack.classList.remove('active-view');
-        viewLoopstack.classList.add('hidden-view');
-
-        viewCanvas.classList.remove('hidden-view');
-        viewCanvas.classList.add('active-view');
-        window.location.hash = '';
+    function sample(stops, p) {
+      if (p <= stops[0].p) return stops[0].v;
+      if (p >= stops[stops.length - 1].p) return stops[stops.length - 1].v;
+      for (let i = 0; i < stops.length - 1; i++) {
+        const s0 = stops[i], s1 = stops[i + 1];
+        if (p >= s0.p && p <= s1.p) {
+          const t = (p - s0.p) / (s1.p - s0.p);
+          const st = t * t * (3 - 2 * t);
+          return s0.v + (s1.v - s0.v) * st;
+        }
       }
+      return stops[0].v;
     }
 
-    btnGetStarted.addEventListener('click', () => switchView('loopstack'));
-    btnBackToCanvas.addEventListener('click', () => switchView('canvas'));
-
-    // Handle back/forward browser history
-    window.addEventListener('popstate', () => {
-      if (window.location.hash === '#loopstack' || window.location.hash === '#chat') {
-        switchView('loopstack');
-      } else {
-        switchView('canvas');
+    // ---------------------------------------------------------
+    // 2. SHARED SIMPLEX NOISE (GLSL) — VERBATIM
+    // ---------------------------------------------------------
+    const SNOISE = `
+      vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
+      vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
+      float snoise(vec3 v){
+        const vec2 C = vec2(1.0/6.0, 1.0/3.0); const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+        vec3 i = floor(v + dot(v, C.yyy)); vec3 x0 = v - i + dot(i, C.xxx);
+        vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1.0 - g;
+        vec3 i1 = min(g.xyz, l.zxy); vec3 i2 = max(g.xyz, l.zxy);
+        vec3 x1 = x0 - i1 + 1.0 * C.xxx; vec3 x2 = x0 - i2 + 2.0 * C.xxx; vec3 x3 = x0 - 1.0 + 3.0 * C.xxx;
+        i = mod(i, 289.0);
+        vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+        float n_ = 1.0/7.0; vec3 ns = n_ * D.wyz - D.xzx;
+        vec4 j = p - 49.0 * floor(p * ns.z *ns.z);
+        vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7.0 * x_);
+        vec4 x = x_ *ns.x + ns.yyyy; vec4 y = y_ *ns.x + ns.yyyy; vec4 h = 1.0 - abs(x) - abs(y);
+        vec4 b0 = vec4(x.xy, y.xy); vec4 b1 = vec4(x.zw, y.zw);
+        vec4 s0 = floor(b0)*2.0 + 1.0; vec4 s1 = floor(b1)*2.0 + 1.0; vec4 sh = -step(h, vec4(0.0));
+        vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy; vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+        vec3 p0 = vec3(a0.xy,h.x); vec3 p1 = vec3(a0.zw,h.y); vec3 p2 = vec3(a1.xy,h.z); vec3 p3 = vec3(a1.zw,h.w);
+        vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+        p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+        vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0); m = m * m;
+        return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
       }
-    });
+    `;
 
-    // Check initial hash
-    if (window.location.hash === '#loopstack' || window.location.hash === '#chat') {
-      switchView('loopstack');
-    }
-
-    // =========================================================
-    // 3D SPHERES WEBGL ENGINE (THREE.JS)
-    // =========================================================
-    const canvasEl = document.getElementById('webgl');
-    const bgGradient = document.getElementById('bgGradient');
-
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasEl,
-      antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance'
-    });
+    // ---------------------------------------------------------
+    // 3. RENDERER, SCENE, CAMERA, LIGHTS, COMPOSERS
+    // ---------------------------------------------------------
+    const canvas = document.getElementById('planetCanvas');
+    const renderer = new THREE.WebGL1Renderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.VSMShadowMap;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0, 11);
+    scene.background = new THREE.Color(0x000000);
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x2f69ff, 1.6);
-    scene.add(hemiLight);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
-    keyLight.position.set(-6, 10, 8);
-    keyLight.castShadow = true;
-    scene.add(keyLight);
+    const camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 200);
+    camera.position.set(0, 0, 8);
+    camera.layers.enable(LAYERS.TORUS_SCENE);
+    camera.layers.enable(LAYERS.BLOOM_SCENE);
+    camera.layers.enable(LAYERS.ENTIRE_SCENE);
+    scene.add(camera);
 
-    const rimLight = new THREE.DirectionalLight(0xffffff, 1.25);
-    rimLight.position.set(8, 7, -8);
-    scene.add(rimLight);
+    const ambLight = new THREE.AmbientLight(0xffffff, 1.8);
+    ambLight.layers.set(LAYERS.ENTIRE_SCENE);
+    scene.add(ambLight);
 
-    const frontLight = new THREE.DirectionalLight(0xffffff, 0.45);
-    frontLight.position.set(0, 0, 11);
-    scene.add(frontLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(0, 10, 2);
+    dirLight.layers.set(LAYERS.ENTIRE_SCENE);
+    scene.add(dirLight);
 
-    let viewportWidth = 10;
-    let viewportHeight = 6;
-    function updateFrustumBounds() {
-      const fovRad = THREE.MathUtils.degToRad(camera.fov);
-      viewportHeight = 2 * Math.tan(fovRad / 2) * camera.position.z;
-      viewportWidth = viewportHeight * (window.innerWidth / window.innerHeight);
+    // OrbitControls as specified (disabled so it never grabs pointer/scroll)
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.enablePan = false;
+    controls.enabled = false;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = CONFIG.autoRotate;
+    controls.minDistance = 3.5;
+    controls.maxDistance = 16;
+    controls.target.set(0, 0, 0);
+
+    // Torus composer (renderToScreen=false)
+    const torusComposer = new EffectComposer(renderer);
+    torusComposer.renderToScreen = false;
+    torusComposer.addPass(new RenderPass(scene, camera));
+    torusComposer.addPass(new ShaderPass(GammaCorrectionShader));
+    torusComposer.addPass(new UnrealBloomPass(new THREE.Vector2(w, h), 0.22, 0.2, 0));
+    torusComposer.addPass(new ShaderPass(CopyShader));
+
+    // Bloom composer (renderToScreen=false)
+    const bloomComposer = new EffectComposer(renderer);
+    bloomComposer.renderToScreen = false;
+    bloomComposer.addPass(new RenderPass(scene, camera));
+    bloomComposer.addPass(new UnrealBloomPass(new THREE.Vector2(w, h), 0.5, 0.6, 0));
+    bloomComposer.addPass(new ShaderPass(GammaCorrectionShader));
+
+    // Safe 1x1 fallback texture for initial passes
+    const fallbackTex = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1);
+    fallbackTex.needsUpdate = true;
+
+    // FinalPass shader — VERBATIM
+    const FinalPass = {
+      uniforms: {
+        iTime: { value: 0 },
+        tDiffuse: { value: null },
+        torusTexture: { value: torusComposer.renderTarget1.texture },
+        bloomTexture: { value: bloomComposer.renderTarget1.texture },
+        haloTexture: { value: fallbackTex },
+        uBg: { value: hexToVec3(CONFIG.bgColor) },
+        uFlameA: { value: hexToVec3(CONFIG.flameColor) },
+        uFlameB: { value: hexToVec3(CONFIG.flameColor2) },
+        uFlameAmt: { value: CONFIG.flameAmt }
+      },
+      vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position, 1.0); }`,
+      fragmentShader: `
+        uniform float iTime; uniform sampler2D tDiffuse; uniform sampler2D bloomTexture; uniform sampler2D torusTexture; uniform sampler2D haloTexture;
+        uniform vec3 uBg; uniform vec3 uFlameA; uniform vec3 uFlameB; uniform float uFlameAmt;
+        varying vec2 vUv;
+        vec3 warp3d(vec3 pos, float t){ float curv=.8,a=1.9,b=0.7; pos*=2.;
+          pos.x+=curv*sin(t+a*pos.y)+t*b; pos.y+=curv*cos(t+a*pos.x);
+          pos.y+=curv*sin(t+a*pos.z)+t*b; pos.z+=curv*cos(t+a*pos.y);
+          pos.z+=curv*sin(t+a*pos.x)+t*b; pos.x+=curv*cos(t+a*pos.z);
+          return 0.5+0.5*cos(pos.xyz+vec3(1,2,4)); }
+        void main(){
+          vec2 uv = 2.*vUv - 1.;
+          vec3 w = pow(warp3d(vec3(uv.x, sin(uv.y), uv.y), iTime*1.5), vec3(1.5));
+          vec3 flame = 1.5*uFlameA*w.x; flame*=w.y; flame += uFlameB*w.z;
+          flame *= smoothstep(0.25, 1., abs(uv.y));
+          float md = smoothstep(-0.7, 1., -uv.y*uv.x); flame *= md*md;
+          vec3 bg = uBg * (1.0 - 0.4 * length(uv));
+          vec3 halo = texture2D(haloTexture, vUv).xyz;
+          gl_FragColor = vec4(bg + flame*uFlameAmt + texture2D(bloomTexture, vUv).xyz + texture2D(torusTexture, vUv).xyz + texture2D(tDiffuse, vUv).xyz + halo, 1.);
+        }
+      `
+    };
+
+    const finalPass = new ShaderPass(FinalPass);
+    const finalComposer = new EffectComposer(renderer);
+    finalComposer.addPass(new RenderPass(scene, camera));
+    finalComposer.addPass(finalPass);
+
+    // Helper to ensure an object is visible to all camera layer passes
+    function makeVisibleAll(obj) {
+      obj.layers.enable(LAYERS.NONE);
+      obj.layers.enable(LAYERS.TORUS_SCENE);
+      obj.layers.enable(LAYERS.BLOOM_SCENE);
+      obj.layers.enable(LAYERS.ENTIRE_SCENE);
+      if (obj.children) {
+        for (let i = 0; i < obj.children.length; i++) {
+          makeVisibleAll(obj.children[i]);
+        }
+      }
     }
-    updateFrustumBounds();
 
-    const ballCount = window.innerWidth < 768 ? 50 : 96;
-    const sphereGeometry = new THREE.SphereGeometry(1, 40, 40);
-    const balls = [];
+    // ---------------------------------------------------------
+    // 4. SCENE HIERARCHY & GROUPING
+    // ---------------------------------------------------------
+    const worldGroup = new THREE.Group();
+    scene.add(worldGroup);
 
-    const paletteCurrent = {
-      pastel: new THREE.Color("#ECEFFF"),
-      light: new THREE.Color("#A8C1FF"),
-      medium: new THREE.Color("#2F69FF"),
-      deep: new THREE.Color("#0A33BF"),
-      glass: new THREE.Color("#4D80FF")
-    };
+    const planetGroup = new THREE.Group();
+    planetGroup.rotation.z = CONFIG.tilt;
+    worldGroup.add(planetGroup);
 
-    const paletteTarget = {
-      pastel: new THREE.Color("#ECEFFF"),
-      light: new THREE.Color("#A8C1FF"),
-      medium: new THREE.Color("#2F69FF"),
-      deep: new THREE.Color("#0A33BF"),
-      glass: new THREE.Color("#4D80FF")
-    };
+    const cloudGroup = new THREE.Group();
+    cloudGroup.rotation.z = CONFIG.tilt;
+    cloudGroup.visible = false; // starts visible=false until planet loads
+    worldGroup.add(cloudGroup);
 
-    for (let i = 0; i < ballCount; i++) {
-      let radius = 0.33;
-      const rand = Math.random();
-      if (rand < 0.3) radius = 0.26 + Math.random() * 0.12;
-      else if (rand < 0.8) radius = 0.40 + Math.random() * 0.18;
-      else radius = 0.65 + Math.random() * 0.22;
+    worldGroup.position.set(STOPS_X[0].v, STOPS_Y[0].v, 0);
+    worldGroup.scale.setScalar(STOPS_S[0].v);
+    makeVisibleAll(worldGroup);
 
-      const mass = Math.pow(radius, 3);
-      const isGlass = Math.random() < 0.22;
+    // Atmosphere halo glow (additive billboard plane) — VERBATIM
+    const haloMat = new THREE.ShaderMaterial({
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uGlow: { value: hexToVec3(CONFIG.glowColor) },
+        uIntensity: { value: CONFIG.glowIntensity }
+      },
+      vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      fragmentShader: `
+        uniform vec3 uGlow; uniform float uIntensity; varying vec2 vUv;
+        void main(){
+          float d = length(vUv - 0.5) * 2.0;
+          float a = pow(clamp(1.0 - d, 0.0, 1.0), 2.2);
+          gl_FragColor = vec4(uGlow * a * uIntensity, a);
+        }
+      `
+    });
+    const glowMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), haloMat);
+    glowMesh.scale.setScalar(CONFIG.planetRadius * 2.3);
+    makeVisibleAll(glowMesh);
+    worldGroup.add(glowMesh);
 
-      let role = "medium";
-      if (!isGlass) {
-        const cr = Math.random();
-        if (cr < 0.25) role = "pastel";
-        else if (cr < 0.55) role = "light";
-        else if (cr < 0.85) role = "medium";
-        else role = "deep";
+    // Initial procedural planet sphere (immediate render on frame 0)
+    const fallbackPlanet = new THREE.Mesh(
+      new THREE.SphereGeometry(CONFIG.planetRadius, 64, 64),
+      new THREE.MeshStandardMaterial({ color: 0x133d88, roughness: 0.9, metalness: 0.1 })
+    );
+    makeVisibleAll(fallbackPlanet);
+    planetGroup.add(fallbackPlanet);
+
+    // ---------------------------------------------------------
+    // 5. AMBIENT ATMOSPHERE MOTES (320 POINTS) — VERBATIM
+    // ---------------------------------------------------------
+    const moteGeo = new THREE.BufferGeometry();
+    const motePos = new Float32Array(CONFIG.atmoCount * 3);
+    const moteSizes = new Float32Array(CONFIG.atmoCount);
+    const moteSeeds = new Float32Array(CONFIG.atmoCount);
+
+    for (let i = 0; i < CONFIG.atmoCount; i++) {
+      motePos[i * 3 + 0] = (Math.random() - 0.5) * 2.5;
+      motePos[i * 3 + 1] = (Math.random() - 0.5) * 2.5;
+      motePos[i * 3 + 2] = (Math.random() - 0.5) * 2.5;
+      moteSizes[i] = CONFIG.atmoSize * (0.4 + Math.random());
+      moteSeeds[i] = Math.random() * 20.0;
+    }
+    moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
+    moteGeo.setAttribute('size', new THREE.BufferAttribute(moteSizes, 1));
+    moteGeo.setAttribute('seed', new THREE.BufferAttribute(moteSeeds, 1));
+
+    const moteMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uTime: { value: 0 },
+        uRes: { value: new THREE.Vector2(w, h) },
+        uColor: { value: hexToVec3(CONFIG.atmoColor) }
+      },
+      vertexShader: `
+        attribute float size; attribute float seed; uniform float uTime; uniform vec2 uRes;
+        varying float vA;
+        vec3 warp(vec3 p, float t){ float c=0.9,a=1.9,b=0.02,s=0.05; p*=2.;
+          p.x+=c*sin(s*t+a*p.y)+t*b; p.y+=c*cos(s*t+a*p.x); p.y+=c*sin(s*t+a*p.z)+t*b;
+          p.z+=c*cos(s*t+a*p.y); p.z+=c*sin(s*t+a*p.x)+t*b; p.x+=c*cos(s*t+a*p.z);
+          return cos(p+vec3(1,2,4)); }
+        void main(){
+          vec3 v = position*4.0 + warp(position, uTime)*1.2;
+          vec4 mv = modelViewMatrix * vec4(v, 1.0);
+          float r = length(v); float farF = 1.0 - smoothstep(5.0, 6.5, r); float nearF = smoothstep(0.0, 0.5, -mv.z);
+          vA = farF * nearF;
+          gl_PointSize = size * uRes.y / 900.0 / -mv.z; gl_PointSize = max(gl_PointSize, 1.0);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor; varying float vA;
+        void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) discard;
+          float tex = smoothstep(0.5, 0.0, l); gl_FragColor = vec4(uColor * tex, tex * vA * 0.55); }
+      `
+    });
+    const motesPoints = new THREE.Points(moteGeo, moteMat);
+    makeVisibleAll(motesPoints);
+    scene.add(motesPoints);
+
+    // ---------------------------------------------------------
+    // 6. STARFIELD (1,400 POINTS ON SPHERE r=90) — VERBATIM
+    // ---------------------------------------------------------
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(CONFIG.starCount * 3);
+    const starSeeds = new Float32Array(CONFIG.starCount);
+    const starBright = new Float32Array(CONFIG.starCount);
+
+    for (let i = 0; i < CONFIG.starCount; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const r = 90.0;
+      starPos[i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta);
+      starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      starPos[i * 3 + 2] = r * Math.cos(phi);
+      starSeeds[i] = Math.random() * 20.0;
+      starBright[i] = 0.35 + Math.random() * 0.65;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    starGeo.setAttribute('seed', new THREE.BufferAttribute(starSeeds, 1));
+    starGeo.setAttribute('bright', new THREE.BufferAttribute(starBright, 1));
+
+    const starMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uTime: { value: 0 },
+        uSize: { value: CONFIG.starSize },
+        uFlicker: { value: CONFIG.starFlicker },
+        uColor: { value: hexToVec3(CONFIG.starColor) },
+        uRes: { value: new THREE.Vector2(w, h) }
+      },
+      vertexShader: `
+        attribute float seed; attribute float bright;
+        uniform float uTime; uniform float uSize; uniform float uFlicker; uniform vec2 uRes;
+        varying float vTw;
+        void main(){
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          float tw = 0.6 + 0.4 * sin(uTime * uFlicker + seed);
+          vTw = bright * tw;
+          gl_PointSize = max(uSize * uRes.y / 900.0 * (90.0 / max(-mv.z, 1.0)), 1.0);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor; varying float vTw;
+        void main(){
+          vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) discard;
+          float core = smoothstep(0.5, 0.0, l);
+          gl_FragColor = vec4(uColor, core * vTw);
+        }
+      `
+    });
+    const starPoints = new THREE.Points(starGeo, starMat);
+    starPoints.frustumCulled = false;
+    makeVisibleAll(starPoints);
+    scene.add(starPoints);
+
+    // ---------------------------------------------------------
+    // 7. GLTF EARTH & NIGHT LIGHTS LOADING + CUSTOM SHADER
+    // ---------------------------------------------------------
+    const ASSET_BASE = 'https://api.getlayers.ai/storage/v1/object/public/public/assets/ascend-d9857ad1f2';
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.setDRACOLoader(dracoLoader);
+
+    let planetMesh = null;
+    let planetUniforms = null;
+    let nightTex = null;
+    let planetTime = 0;
+    let cloudTime = 0;
+    let starTime = 0;
+    let markerTime = 0;
+    let entryStartTime = null;
+
+    // Load night city lights mesh
+    gltfLoader.load(`${ASSET_BASE}/planet-lights.glb`, (gltfLights) => {
+      gltfLights.scene.traverse((child) => {
+        if (child.isMesh && child.material && child.material.map) {
+          nightTex = child.material.map;
+        }
+      });
+      if (nightTex && planetUniforms) {
+        planetUniforms.nightBlendTexture.value = nightTex;
+      }
+    });
+
+    // Load planet.glb
+    gltfLoader.load(`${ASSET_BASE}/planet.glb`, (gltfPlanet) => {
+      gltfPlanet.scene.traverse((child) => {
+        if (child.isMesh && !planetMesh) {
+          planetMesh = child;
+        }
+      });
+
+      if (!planetMesh) return;
+
+      // Remove fallback sphere
+      planetGroup.remove(fallbackPlanet);
+
+      planetMesh.geometry.computeBoundingSphere();
+      const r = planetMesh.geometry.boundingSphere.radius;
+      const scaleFactor = CONFIG.planetRadius / r;
+      planetMesh.scale.setScalar(scaleFactor);
+
+      const baseMat = planetMesh.material.clone();
+      baseMat.metalness = 0;
+      baseMat.roughness = 1;
+      baseMat.envMapIntensity = 0;
+      baseMat.extensions = { derivatives: true };
+
+      planetUniforms = {
+        time: { value: 0 },
+        noiseScale: { value: 30 },
+        speedX: { value: 1.5 },
+        speedY: { value: 2.0 },
+        speedZ: { value: 2.5 },
+        rimColor: { value: hexToVec3(CONFIG.rimColor) },
+        rimPower: { value: CONFIG.rimPower },
+        nightBlendTexture: { value: nightTex || fallbackTex },
+        nightLights: { value: CONFIG.nightLights },
+        terrainDepth: { value: CONFIG.terrainDepth },
+        terrainShade: { value: CONFIG.terrainShade },
+        oceanGlint: { value: CONFIG.oceanGlint },
+        oceanDeep: { value: CONFIG.oceanDeep },
+        oceanFlow: { value: CONFIG.oceanFlow },
+        oceanFlowSpeed: { value: CONFIG.oceanFlowSpeed },
+        oceanFlowScale: { value: CONFIG.oceanFlowScale }
+      };
+
+      baseMat.onBeforeCompile = (shader) => {
+        Object.assign(shader.uniforms, planetUniforms);
+        shader.vertexShader = 'varying vec2 vCustomUv;\n' + shader.vertexShader;
+        shader.vertexShader = shader.vertexShader.replace(
+          /void\s+main\s*\(\)\s*\{/,
+          'void main() {\n  vCustomUv = uv;'
+        );
+
+        shader.fragmentShader = `
+          uniform float time; uniform float noiseScale; uniform float speedX; uniform float speedY; uniform float speedZ;
+          uniform vec3 rimColor; uniform float rimPower; uniform sampler2D nightBlendTexture; uniform float nightLights;
+          uniform float terrainDepth; uniform float terrainShade; uniform float oceanGlint; uniform float oceanDeep;
+          uniform float oceanFlow; uniform float oceanFlowSpeed; uniform float oceanFlowScale;
+          varying vec2 vCustomUv;
+          ${SNOISE}
+        ` + shader.fragmentShader;
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <dithering_fragment>',
+          `
+          #include <dithering_fragment>
+          vec3 normalizedNormal = normalize(vNormal);
+          vec3 viewDir = normalize(vViewPosition);
+          float rim = 1.0 - max(dot(viewDir, normalizedNormal), 0.0);
+          rim = pow(rim, rimPower); rim = pow(rim, 1.5); rim *= 0.7;
+          vec3 currentColor = gl_FragColor.rgb;
+          float blueDom = currentColor.b - max(currentColor.r, currentColor.g);
+          float waterMask = clamp(smoothstep(-0.005, 0.03, blueDom), 0.0, 1.0);
+          float shimmer = snoise(vec3(vCustomUv.x * noiseScale + time * speedX, vCustomUv.y * noiseScale - time * speedY, time * speedZ));
+          gl_FragColor.rgb += waterMask * shimmer * 0.025;
+          float fT = time * oceanFlowSpeed * 4.0;
+          float fS = 4.0 * oceanFlowScale;
+          float warp = snoise(vec3(vCustomUv.x * fS - fT * 0.5, vCustomUv.y * fS + fT * 0.4, fT * 0.5));
+          float flow = snoise(vec3(vCustomUv.x * fS * 2.0 + fT * 0.6 + warp, vCustomUv.y * fS * 2.0 - fT * 0.5, fT * 0.7));
+          flow = warp * 0.6 + flow * 0.4;
+          gl_FragColor.rgb += waterMask * flow * 0.12 * oceanFlow;
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.01, 0.06, 0.16), waterMask * oceanDeep);
+          vec3 finalColor = mix(gl_FragColor.rgb, rimColor, rim);
+          gl_FragColor = vec4(finalColor, 1.0);
+          vec3 surfPos = -vViewPosition;
+          float terrH = dot(texture2D(map, vCustomUv).rgb, vec3(0.299, 0.587, 0.114));
+          vec3 sigX = dFdx(surfPos), sigY = dFdy(surfPos);
+          vec3 vR1 = cross(sigY, normalizedNormal), vR2 = cross(normalizedNormal, sigX);
+          float fDet = dot(sigX, vR1);
+          vec3 vGrad = sign(fDet) * (dFdx(terrH) * vR1 + dFdy(terrH) * vR2);
+          vec3 bumpedNormal = normalize(abs(fDet) * normalizedNormal - terrainDepth * vGrad);
+          vec3 shadeNormal = mix(bumpedNormal, normalizedNormal, waterMask);
+          vec3 cityLights = texture2D(nightBlendTexture, vCustomUv).rgb * gl_FragColor.rgb * nightLights;
+          vec3 viewSunDir = normalize(vec3(-0.9, 0.18, 0.4));
+          float ndl = dot(normalizedNormal, viewSunDir);
+          float dayAmt = smoothstep(-0.05, 0.35, ndl);
+          float relief = dot(shadeNormal, viewSunDir) - ndl;
+          gl_FragColor.rgb *= clamp(1.0 + relief * terrainShade * dayAmt, 0.55, 1.6);
+          float nightFactor  = smoothstep(0.18, -0.30, ndl);
+          float lightsFactor = smoothstep(0.30, -0.35, ndl);
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * 0.08, nightFactor);
+          gl_FragColor.rgb += cityLights * lightsFactor;
+          vec3 halfDir = normalize(viewSunDir + viewDir);
+          float ripple = snoise(vec3(vCustomUv * 240.0, time * 4.0));
+          float ndh = max(dot(normalizedNormal, halfDir) + ripple * 0.02, 0.0);
+          float glint = pow(ndh, 140.0);
+          gl_FragColor.rgb += glint * waterMask * dayAmt * oceanGlint * vec3(1.0, 0.97, 0.88);
+          `
+        );
+      };
+
+      planetMesh.material = baseMat;
+      makeVisibleAll(planetMesh);
+      planetGroup.add(planetMesh);
+
+      // Cloud shells become visible once the planet loads
+      cloudGroup.visible = true;
+
+      // Start the one-time float-up entrance
+      entryStartTime = performance.now();
+
+      // Sample land markers and add to planet
+      buildLandMarkers(planetMesh);
+    });
+
+    // ---------------------------------------------------------
+    // 8. CLOUD SHELLS (3 LAYERS) — VERBATIM
+    // ---------------------------------------------------------
+    const texLoader = new THREE.TextureLoader();
+    texLoader.load(`${ASSET_BASE}/planet-clouds.png`, (cloudTex) => {
+      cloudTex.wrapS = THREE.RepeatWrapping;
+      cloudTex.wrapT = THREE.RepeatWrapping;
+      cloudTex.repeat.set(5, 5);
+
+      const layers = [
+        { h: CONFIG.cloud1Height, o: CONFIG.cloud1Opacity, s: CONFIG.cloud1Spin, ry: 0.0, phase: 0.0 },
+        { h: CONFIG.cloud2Height, o: CONFIG.cloud2Opacity, s: CONFIG.cloud2Spin, ry: 2.2, phase: 13.0 },
+        { h: CONFIG.cloud3Height, o: CONFIG.cloud3Opacity, s: CONFIG.cloud3Spin, ry: 4.3, phase: 27.0 }
+      ];
+
+      layers.forEach((l) => {
+        const geo = new THREE.SphereGeometry(CONFIG.planetRadius * l.h, 64, 64);
+        const mat = new THREE.MeshStandardMaterial({
+          map: cloudTex,
+          transparent: true,
+          depthWrite: false
+        });
+
+        const uniforms = {
+          uTime: { value: 0 },
+          noiseScale: { value: 20 },
+          uSpeedX: { value: 1 },
+          uSpeedY: { value: 2 },
+          uSpeedZ: { value: 2 },
+          uOpacity: { value: l.o },
+          uPhase: { value: l.phase }
+        };
+
+        mat.onBeforeCompile = (shader) => {
+          Object.assign(shader.uniforms, uniforms);
+          shader.vertexShader = 'varying vec2 vCloudUv;\n' + shader.vertexShader;
+          shader.vertexShader = shader.vertexShader.replace(
+            /void\s+main\s*\(\)\s*\{/,
+            'void main() {\n  vCloudUv = uv;'
+          );
+
+          shader.fragmentShader = `
+            uniform float uTime; uniform float noiseScale; uniform float uSpeedX; uniform float uSpeedY; uniform float uSpeedZ;
+            uniform float uOpacity; uniform float uPhase; varying vec2 vCloudUv;
+            ${SNOISE}
+          ` + shader.fragmentShader;
+
+          shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <dithering_fragment>',
+            `
+            #include <dithering_fragment>
+            gl_FragColor.rgb = vec3(1.0);
+            float cloudNoise = snoise(vec3(vCloudUv.x * noiseScale + uTime * uSpeedX + uPhase, vCloudUv.y * noiseScale - uTime * uSpeedY + uPhase, uTime * uSpeedZ + uPhase));
+            float cloudNdv = max(dot(normalize(vNormal), normalize(vViewPosition)), 0.0);
+            float cloudEdge = pow(1.0 - cloudNdv, 3.0);
+            float cloudMod = mix(cloudNoise, 1.0, cloudEdge);
+            float cloudNdl = dot(normalize(vNormal), normalize(vec3(-0.9, 0.18, 0.4)));
+            float cloudDay = 1.0 - smoothstep(0.30, -0.30, cloudNdl) * 0.9;
+            gl_FragColor.a *= cloudMod * uOpacity * cloudDay;
+            `
+          );
+        };
+
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.rotation.y = l.ry;
+        mesh.renderOrder = 2;
+        mesh.userData.spin = l.s;
+        mesh.userData.uniforms = uniforms;
+        makeVisibleAll(mesh);
+        cloudGroup.add(mesh);
+      });
+    });
+
+    // ---------------------------------------------------------
+    // 9. GOLDEN RADAR PINGS ON LAND — VERBATIM
+    // ---------------------------------------------------------
+    let markerUniforms = null;
+    function buildLandMarkers(mesh) {
+      const markerPositions = [];
+      const markerSeeds = [];
+
+      // Sample land points by reading base color texture if available
+      const map = mesh.material.map;
+      const img = map && map.image ? map.image : null;
+      let pixelData = null;
+      const cw = 512, ch = 256;
+
+      if (img) {
+        try {
+          const cvs = document.createElement('canvas');
+          cvs.width = cw;
+          cvs.height = ch;
+          const ctx = cvs.getContext('2d');
+          ctx.drawImage(img, 0, 0, cw, ch);
+          pixelData = ctx.getImageData(0, 0, cw, ch).data;
+        } catch (e) {
+          // fallback if CORS prevents direct pixel access
+        }
+      }
+
+      function checkLand(u, v) {
+        if (!pixelData) return true;
+        const px = Math.floor(clamp(u, 0, 1) * (cw - 1));
+        const py = Math.floor(clamp(1 - v, 0, 1) * (ch - 1));
+        const idx = (py * cw + px) * 4;
+        const cr = pixelData[idx], cg = pixelData[idx + 1], cb = pixelData[idx + 2];
+        if (cb > cr + 6 && cb > cg + 6) return false; // reject ocean
+        return true;
+      }
+
+      const geom = mesh.geometry;
+      const posAttr = geom.attributes.position;
+      const uvAttr = geom.attributes.uv;
+      const indexAttr = geom.index;
+
+      let count = 0;
+      let attempts = 0;
+      const maxAttempts = 3000;
+
+      if (posAttr && uvAttr && indexAttr) {
+        const triCount = indexAttr.count / 3;
+        while (count < CONFIG.markerCount && attempts < maxAttempts) {
+          attempts++;
+          const tIdx = Math.floor(Math.random() * triCount);
+          const i0 = indexAttr.getX(tIdx * 3);
+          const i1 = indexAttr.getX(tIdx * 3 + 1);
+          const i2 = indexAttr.getX(tIdx * 3 + 2);
+
+          let r1 = Math.random(), r2 = Math.random();
+          if (r1 + r2 > 1) { r1 = 1 - r1; r2 = 1 - r2; }
+          const r0 = 1 - r1 - r2;
+
+          const u = r0 * uvAttr.getX(i0) + r1 * uvAttr.getX(i1) + r2 * uvAttr.getX(i2);
+          const v = r0 * uvAttr.getY(i0) + r1 * uvAttr.getY(i1) + r2 * uvAttr.getY(i2);
+
+          if (checkLand(u, v)) {
+            const x = r0 * posAttr.getX(i0) + r1 * posAttr.getX(i1) + r2 * posAttr.getX(i2);
+            const y = r0 * posAttr.getY(i0) + r1 * posAttr.getY(i1) + r2 * posAttr.getY(i2);
+            const z = r0 * posAttr.getZ(i0) + r1 * posAttr.getZ(i1) + r2 * posAttr.getZ(i2);
+            const p = new THREE.Vector3(x, y, z).normalize().multiplyScalar(CONFIG.planetRadius * 1.012);
+            markerPositions.push(p.x, p.y, p.z);
+            markerSeeds.push(Math.random() * 20.0);
+            count++;
+          }
+        }
+      }
+
+      // Fill remaining if needed
+      while (count < CONFIG.markerCount) {
+        const phi = Math.acos(-1 + (2 * count) / CONFIG.markerCount);
+        const theta = Math.sqrt(CONFIG.markerCount * Math.PI) * phi;
+        const r = CONFIG.planetRadius * 1.012;
+        markerPositions.push(
+          r * Math.cos(theta) * Math.sin(phi),
+          r * Math.sin(theta) * Math.sin(phi),
+          r * Math.cos(phi)
+        );
+        markerSeeds.push(Math.random() * 20.0);
+        count++;
+      }
+
+      const markerGeo = new THREE.BufferGeometry();
+      markerGeo.setAttribute('position', new THREE.Float32BufferAttribute(markerPositions, 3));
+      markerGeo.setAttribute('seed', new THREE.Float32BufferAttribute(markerSeeds, 1));
+
+      markerUniforms = {
+        uTime: { value: 0 },
+        uColor: { value: hexToVec3(CONFIG.markerColor) },
+        uSize: { value: CONFIG.markerSize },
+        uSpeed: { value: CONFIG.markerSpeed },
+        uRes: { value: new THREE.Vector2(w, h) }
+      };
+
+      const markerMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthTest: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: markerUniforms,
+        vertexShader: `
+          attribute float seed; uniform float uSize; uniform vec2 uRes;
+          varying float vSeed; varying float vFade;
+          void main(){
+            vSeed = seed;
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            vec3 vn = normalize(normalMatrix * normalize(position));
+            vec3 vd = normalize(-mv.xyz);
+            vFade = smoothstep(0.15, 0.5, dot(vn, vd));
+            gl_PointSize = max(uSize * uRes.y / 900.0 * (7.0 / max(-mv.z, 1.0)), 2.0);
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor; uniform float uTime; uniform float uSpeed;
+          varying float vSeed; varying float vFade;
+          void main(){
+            if (vFade <= 0.001) discard;
+            vec2 p = gl_PointCoord - 0.5;
+            float d = length(p) * 2.0;
+            if (d > 1.0) discard;
+            float core = smoothstep(0.30, 0.0, d) * 1.2;
+            float ph = fract(uTime * uSpeed + vSeed);
+            float ring = smoothstep(0.07, 0.0, abs(d - ph)) * (1.0 - ph);
+            gl_FragColor = vec4(uColor, clamp(core + ring, 0.0, 1.0) * vFade);
+          }
+        `
+      });
+
+      const markers = new THREE.Points(markerGeo, markerMat);
+      makeVisibleAll(markers);
+      mesh.add(markers);
+    }
+
+    // ---------------------------------------------------------
+    // 10. LENIS SMOOTH SCROLL & STAGGERED REVEAL
+    // ---------------------------------------------------------
+    const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let lenis = null;
+
+    if (!isReduced) {
+      lenis = new Lenis({
+        duration: 1.15,
+        smoothWheel: true,
+        touchMultiplier: 1.5
+      });
+    }
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.18,
+      rootMargin: '0px 0px -8% 0px'
+    });
+
+    document.querySelectorAll('[data-reveal]').forEach(el => {
+      if (isReduced) {
+        el.classList.add('in');
       } else {
-        role = "glass";
+        revealObserver.observe(el);
       }
-
-      const baseColor = paletteCurrent[role];
-      const mat = isGlass
-        ? new THREE.MeshPhysicalMaterial({
-            color: baseColor,
-            roughness: 0.08,
-            metalness: 0,
-            clearcoat: 1,
-            clearcoatRoughness: 0.03,
-            transmission: 0.95,
-            ior: 1.485,
-            thickness: 2.2,
-            specularColor: new THREE.Color("#ffffff"),
-            specularIntensity: 1,
-            attenuationColor: paletteCurrent.pastel,
-            attenuationDistance: 2.5
-          })
-        : new THREE.MeshPhysicalMaterial({
-            color: baseColor,
-            roughness: 0.22,
-            metalness: 0.04,
-            clearcoat: 0.35,
-            clearcoatRoughness: 0.15
-          });
-
-      const mesh = new THREE.Mesh(sphereGeometry, mat);
-      mesh.scale.setScalar(radius);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      scene.add(mesh);
-
-      const spawnX = (Math.random() - 0.5) * (viewportWidth * 0.85);
-      const spawnY = (Math.random() - 0.5) * (viewportHeight * 0.85);
-      const spawnZ = (Math.random() - 0.5) * 3.2;
-
-      mesh.position.set(spawnX, spawnY, spawnZ);
-
-      balls.push({
-        mesh,
-        mat,
-        role,
-        isGlass,
-        radius,
-        mass,
-        pos: new THREE.Vector3(spawnX, spawnY, spawnZ),
-        prev: new THREE.Vector3(spawnX, spawnY, spawnZ),
-        acc: new THREE.Vector3()
-      });
-    }
-
-    const mouseWorld = new THREE.Vector3(999, 999, 0);
-    const pointerNorm = new THREE.Vector2();
-
-    window.addEventListener('pointermove', (e) => {
-      pointerNorm.x = (e.clientX / window.innerWidth) * 2 - 1;
-      pointerNorm.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      mouseWorld.x = (pointerNorm.x * viewportWidth) / 2;
-      mouseWorld.y = (pointerNorm.y * viewportHeight) / 2;
-      mouseWorld.z = 0;
     });
 
-    function solvePhysics(dt) {
-      const halfW = viewportWidth / 2;
-      const halfH = viewportHeight / 2;
-
-      for (let i = 0; i < balls.length; i++) {
-        const b = balls[i];
-        b.acc.set(0, 0, 0);
-
-        // Center gravity pull
-        const toOrigin = b.pos.clone().multiplyScalar(-0.4);
-        b.acc.add(toOrigin);
-
-        // Cursor repulsion
-        const diff = b.pos.clone().sub(mouseWorld);
-        const dist = diff.length();
-        const repRadius = 2.4;
-        if (dist < repRadius && dist > 0.001) {
-          const force = (1 - dist / repRadius) * 26;
-          b.acc.add(diff.normalize().multiplyScalar(force));
-        }
-
-        // Verlet step
-        const vel = b.pos.clone().sub(b.prev).multiplyScalar(0.978);
-        b.prev.copy(b.pos);
-        b.pos.add(vel).add(b.acc.multiplyScalar(dt * dt));
-
-        // Boundary reflection
-        const pad = b.radius + 0.1;
-        if (b.pos.x < -halfW + pad) { b.pos.x = -halfW + pad; b.prev.x = b.pos.x + vel.x * 0.5; }
-        if (b.pos.x > halfW - pad) { b.pos.x = halfW - pad; b.prev.x = b.pos.x + vel.x * 0.5; }
-        if (b.pos.y < -halfH + pad) { b.pos.y = -halfH + pad; b.prev.y = b.pos.y + vel.y * 0.5; }
-        if (b.pos.y > halfH - pad) { b.pos.y = halfH - pad; b.prev.y = b.pos.y + vel.y * 0.5; }
-        if (b.pos.z < -2.2 + pad) { b.pos.z = -2.2 + pad; b.prev.z = b.pos.z + vel.z * 0.5; }
-        if (b.pos.z > 2.2 - pad) { b.pos.z = 2.2 - pad; b.prev.z = b.pos.z + vel.z * 0.5; }
-      }
-
-      // Ball-to-ball collisions
-      for (let i = 0; i < balls.length; i++) {
-        for (let j = i + 1; j < balls.length; j++) {
-          const b1 = balls[i];
-          const b2 = balls[j];
-          const dVec = b1.pos.clone().sub(b2.pos);
-          const dist = dVec.length();
-          const minDist = b1.radius + b2.radius;
-
-          if (dist < minDist && dist > 0.0001) {
-            const overlap = (minDist - dist) * 0.5;
-            const norm = dVec.normalize();
-            b1.pos.addScaledVector(norm, overlap);
-            b2.pos.addScaledVector(norm, -overlap);
-          }
-        }
-      }
-
-      for (let i = 0; i < balls.length; i++) {
-        balls[i].mesh.position.copy(balls[i].pos);
-      }
-    }
-
+    // ---------------------------------------------------------
+    // 11. MAIN ANIMATION LOOP & SCROLL CHOREOGRAPHY
+    // ---------------------------------------------------------
+    let curP = 0;
+    let curX = STOPS_X[0].v;
+    let curY = STOPS_Y[0].v;
+    let curS = STOPS_S[0].v;
+    let spinPhase = 0;
     let lastTime = performance.now();
-    function animate(currentTime) {
-      requestAnimationFrame(animate);
-      const dt = Math.min((currentTime - lastTime) / 1000, 0.033);
-      lastTime = currentTime;
 
-      // Color lerping for scene
-      for (const key of Object.keys(paletteCurrent)) {
-        paletteCurrent[key].lerp(paletteTarget[key], 0.05);
-      }
-      for (let i = 0; i < balls.length; i++) {
-        const b = balls[i];
-        b.mat.color.copy(paletteCurrent[b.role]);
-        if (b.isGlass) b.mat.attenuationColor.copy(paletteCurrent.pastel);
+    function renderFrame(time) {
+      requestAnimationFrame(renderFrame);
+
+      if (lenis) lenis.raf(time);
+
+      const dt = Math.min((time - lastTime) / 1000, 0.05);
+      lastTime = time;
+
+      // Advance per-frame times
+      planetTime += dt / 12;
+      cloudTime += dt / 20;
+      starTime += dt;
+      markerTime += dt;
+
+      if (planetUniforms) planetUniforms.time.value = planetTime;
+      cloudGroup.children.forEach(mesh => {
+        if (mesh.userData.uniforms) mesh.userData.uniforms.uTime.value = cloudTime;
+        mesh.rotation.y += dt * mesh.userData.spin;
+      });
+      starMat.uniforms.uTime.value = starTime;
+      moteMat.uniforms.uTime.value = time * CONFIG.atmoSpeed * 0.008;
+      FinalPass.uniforms.iTime.value = time * 0.001;
+      if (markerUniforms) markerUniforms.uTime.value = markerTime;
+
+      // Motes follow camera
+      motesPoints.position.copy(camera.position);
+
+      // Billboard atmosphere halo glow plane
+      glowMesh.quaternion.copy(camera.quaternion);
+
+      // Scroll progress p (0 at top -> 1 at bottom)
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const pTarget = clamp(scrollY / maxScroll, 0, 1);
+      curP += (pTarget - curP) * Math.min(1, dt * 4.5);
+
+      const sideScale = clamp(window.innerWidth / 1200, 0.5, 1);
+      const targetX = sample(STOPS_X, curP) * sideScale;
+      const targetY = sample(STOPS_Y, curP);
+      const targetS = sample(STOPS_S, curP);
+
+      const k = Math.min(1, dt * 3.2);
+      curX += (targetX - curX) * k;
+      curY += (targetY - curY) * k;
+      curS += (targetS - curS) * k;
+
+      // One-time float-up entrance when planet finishes loading
+      let entryY = 0;
+      if (entryStartTime !== null && !isReduced) {
+        const elapsed = (time - entryStartTime) / 1000;
+        const tNorm = clamp(elapsed / 1.9, 0, 1);
+        const ease = 1 - Math.pow(1 - tNorm, 3);
+        entryY = -6.5 * (1 - ease);
       }
 
-      solvePhysics(dt);
-      renderer.render(scene, camera);
+      worldGroup.position.set(curX, curY + entryY, 0);
+      worldGroup.scale.setScalar(curS);
+
+      // Turn planet with scroll
+      spinPhase += dt * CONFIG.spin;
+      planetGroup.rotation.y = CONFIG.initRotation + spinPhase + curP * Math.PI * 1.6;
+
+      // Three composers multi-stage rendering with camera layer switching
+      finalPass.uniforms.torusTexture.value = torusComposer.readBuffer.texture || torusComposer.renderTarget1.texture;
+      finalPass.uniforms.bloomTexture.value = bloomComposer.readBuffer.texture || bloomComposer.renderTarget1.texture;
+
+      camera.layers.set(LAYERS.TORUS_SCENE);
+      torusComposer.render();
+
+      camera.layers.set(LAYERS.BLOOM_SCENE);
+      bloomComposer.render();
+
+      camera.layers.set(LAYERS.ENTIRE_SCENE);
+      finalComposer.render();
     }
-    requestAnimationFrame(animate);
+    requestAnimationFrame(renderFrame);
 
+    // Resize handling
     window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const nw = window.innerWidth;
+      const nh = window.innerHeight;
+      camera.aspect = nw / nh;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      updateFrustumBounds();
+
+      renderer.setSize(nw, nh);
+      torusComposer.setSize(nw, nh);
+      bloomComposer.setSize(nw, nh);
+      finalComposer.setSize(nw, nh);
+
+      moteMat.uniforms.uRes.value.set(nw, nh);
+      starMat.uniforms.uRes.value.set(nw, nh);
+      if (markerUniforms) markerUniforms.uRes.value.set(nw, nh);
     });
-
-    document.getElementById('btn-canvas-reset').addEventListener('click', () => {
-      paletteTarget.pastel.set("#ECEFFF");
-      paletteTarget.light.set("#A8C1FF");
-      paletteTarget.medium.set("#2F69FF");
-      paletteTarget.deep.set("#0A33BF");
-      paletteTarget.glass.set("#4D80FF");
-      bgGradient.style.background = "radial-gradient(circle at 50% 45%, #ffffff 0%, #ecefff 36%, #c2d1ff 100%)";
-      showToast("3D Palette Reset");
-    });
-
-    // =========================================================
-    // LOOPSTACK LOGIC: REVEALS + CUSTOM CURSOR (VERBATIM)
-    // =========================================================
-    function initLoopstackReveals() {
-      // 1. Wordmark letter-by-letter reveal
-      const logoText = document.querySelector('.footer-logo-text');
-      if (logoText) {
-        const rawText = "Kurama";
-        logoText.innerHTML = '';
-        [...rawText].forEach((char, index) => {
-          const wrapper = document.createElement('span');
-          wrapper.className = 'letter-wrapper';
-          const inner = document.createElement('span');
-          inner.textContent = char === ' ' ? '\u00A0' : char;
-          inner.className = 'letter-inner';
-          inner.style.animationDelay = `${index * 0.09}s`;
-          wrapper.appendChild(inner);
-          logoText.appendChild(wrapper);
-        });
-      }
-
-      // 2. Headline word-by-word reveal
-      const heroTitle = document.querySelector('.hero-title');
-      if (heroTitle) {
-        const text = "Apply Now to be part <br> of the closed beta";
-        const parts = text.split(/(\s+|<br\s*\/?>)/i);
-        heroTitle.innerHTML = '';
-
-        let wordIndex = 0;
-        parts.forEach(part => {
-          if (part.trim() === '') {
-            heroTitle.appendChild(document.createTextNode(' '));
-          } else if (part.toLowerCase().startsWith('<br')) {
-            heroTitle.appendChild(document.createElement('br'));
-          } else {
-            const wrapper = document.createElement('span');
-            wrapper.className = 'word-wrapper';
-            const inner = document.createElement('span');
-            inner.className = 'word-inner';
-            inner.textContent = part;
-            inner.style.animationDelay = `${wordIndex * 0.1}s`;
-            wordIndex++;
-            wrapper.appendChild(inner);
-            heroTitle.appendChild(wrapper);
-          }
-        });
-      }
-    }
-
-    initLoopstackReveals();
-
-    // Cursor Ring Physics (Clean minimal ring without floating text)
-    const cursorRing = document.getElementById('cursor-ring');
-
-    if (cursorRing) {
-      let mouseX = window.innerWidth / 2;
-      let mouseY = window.innerHeight / 2;
-      let ringX = mouseX;
-      let ringY = mouseY;
-
-      let isFirstMove = true;
-      let scale = 0;
-      let targetScale = 0;
-
-      document.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-
-        if (isFirstMove) {
-          ringX = mouseX;
-          ringY = mouseY;
-          isFirstMove = false;
-          cursorRing.classList.add('active');
-        }
-
-        if (viewLoopstack.classList.contains('active-view')) {
-          targetScale = 1;
-        }
-      });
-
-      document.addEventListener('mouseleave', () => { targetScale = 0; });
-      document.addEventListener('mouseenter', () => {
-        if (viewLoopstack.classList.contains('active-view')) {
-          targetScale = 1;
-        }
-      });
-
-      // Hover triggers on interactive buttons to expand the cursor ring
-      const interactiveBtns = document.querySelectorAll('.hero-btn, .loopstack-nav-btn, .kurama-status-badge, .social-icon, .footer-link, .btn-palette-action, .btn-close-modal, .swatch-card, .btn-get-started');
-      interactiveBtns.forEach(btn => {
-        btn.addEventListener('mouseenter', () => {
-          cursorRing.classList.add('expanded');
-        });
-        btn.addEventListener('mouseleave', () => {
-          cursorRing.classList.remove('expanded');
-        });
-      });
-
-      const updateCursorPhysics = () => {
-        ringX = mouseX;
-        ringY = mouseY;
-
-        scale += (targetScale - scale) * 0.15;
-        const currentRingScale = cursorRing.classList.contains('expanded') ? 1.6 * scale : scale;
-
-        cursorRing.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%) scale(${currentRingScale})`;
-
-        requestAnimationFrame(updateCursorPhysics);
-      };
-      updateCursorPhysics();
-    }
-
-    // =========================================================
-    // KURAMA INTEGRATED BOT ENGINE (WCAG & COLOR HARMONY)
-    // =========================================================
-    const kuramaModal = document.getElementById('kurama-modal');
-    const btnOpenKurama1 = document.getElementById('loopstack-hero-btn');
-    const btnOpenKurama2 = document.getElementById('kurama-status-toggle');
-    const btnCloseKurama = document.getElementById('btn-close-kurama');
-    const kuramaChatBody = document.getElementById('kurama-chat-body');
-    const kuramaEmptyState = document.getElementById('kurama-empty-state');
-    const kuramaForm = document.getElementById('kurama-chat-form');
-    const kuramaInput = document.getElementById('kurama-input');
-
-    function openKuramaModal() {
-      kuramaModal.classList.add('open');
-      kuramaInput.focus();
-    }
-
-    function closeKuramaModal() {
-      kuramaModal.classList.remove('open');
-    }
-
-    btnOpenKurama1.addEventListener('click', openKuramaModal);
-    btnOpenKurama2.addEventListener('click', openKuramaModal);
-    btnCloseKurama.addEventListener('click', closeKuramaModal);
-
-    kuramaModal.addEventListener('click', (e) => {
-      if (e.target === kuramaModal) closeKuramaModal();
-    });
-
-    // Quick chip buttons
-    document.querySelectorAll('.kurama-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        handleUserPrompt(chip.dataset.prompt);
-      });
-    });
-
-    kuramaForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const query = kuramaInput.value.trim();
-      if (!query) return;
-      kuramaInput.value = '';
-      handleUserPrompt(query);
-    });
-
-    // Color conversion math
-    function hexToRgb(hex) {
-      const clean = hex.replace('#', '');
-      const num = parseInt(clean, 16);
-      return {
-        r: (num >> 16) & 255,
-        g: (num >> 8) & 255,
-        b: num & 255
-      };
-    }
-
-    function getLuminance(r, g, b) {
-      const a = [r, g, b].map(v => {
-        v /= 255;
-        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-      });
-      return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
-    }
-
-    function getContrastRatio(hex1, hex2) {
-      const rgb1 = hexToRgb(hex1);
-      const rgb2 = hexToRgb(hex2);
-      const l1 = getLuminance(rgb1.r, rgb1.g, rgb1.b) + 0.05;
-      const l2 = getLuminance(rgb2.r, rgb2.g, rgb2.b) + 0.05;
-      return (Math.max(l1, l2) / Math.min(l1, l2)).toFixed(2);
-    }
-
-    // Deterministic palette engine
-    function generatePalette(prompt) {
-      const p = prompt.toLowerCase();
-
-      if (p.includes('fintech') || p.includes('bank') || p.includes('crypto')) {
-        return {
-          title: "Emerald Ledger",
-          reply: "Designed an institutional fintech palette conveying authority, security, and wealth generation through deep malachite greens and refined slate contrast.",
-          colors: [
-            { role: "background", hex: "#080E0B", name: "Deep Obsidian Slate" },
-            { role: "surface", hex: "#121C16", name: "Malachite Surface" },
-            { role: "primary", hex: "#00E575", name: "Electric Mint Green" },
-            { role: "secondary", hex: "#22B573", name: "Jade Ledger" },
-            { role: "accent", hex: "#39FF14", name: "Cyber Volt" },
-            { role: "text", hex: "#F3FFF8", name: "Crisp Mint White" }
-          ]
-        };
-      }
-
-      if (p.includes('game') || p.includes('gaming') || p.includes('cyberpunk') || p.includes('tactical')) {
-        return {
-          title: "Neo Cyberpunk",
-          reply: "High-octane tactical gaming palette engineered with laser volt green, neon magenta, and midnight carbon fiber surfaces.",
-          colors: [
-            { role: "background", hex: "#0A0A0C", name: "Carbon Void" },
-            { role: "surface", hex: "#16161D", name: "Tactical Armor" },
-            { role: "primary", hex: "#39FF14", name: "Neon Matrix Green" },
-            { role: "secondary", hex: "#FF007F", name: "Hyper Magenta" },
-            { role: "accent", hex: "#00E5FF", name: "Plasma Cyan" },
-            { role: "text", hex: "#FFFFFF", name: "Pure Signal White" }
-          ]
-        };
-      }
-
-      if (p.includes('saas') || p.includes('dashboard') || p.includes('app')) {
-        return {
-          title: "Nova Horizon SaaS",
-          reply: "Streamlined modern SaaS UI palette built for maximum data readability, micro-interactions, and cognitive ergonomics.",
-          colors: [
-            { role: "background", hex: "#0D1117", name: "Deep Slate Dark" },
-            { role: "surface", hex: "#161B22", name: "Elevated Card" },
-            { role: "primary", hex: "#2F69FF", name: "Royal Azure" },
-            { role: "secondary", hex: "#6366F1", name: "Indigo Orbit" },
-            { role: "accent", hex: "#39FF14", name: "Active Pulse Green" },
-            { role: "text", hex: "#F0F6FC", name: "High-Contrast White" }
-          ]
-        };
-      }
-
-      if (p.includes('luxury') || p.includes('portfolio') || p.includes('brand')) {
-        return {
-          title: "Atelier Champagne",
-          reply: "An ultra-refined minimal luxury palette balancing satin blacks, ivory showcases, and warm bronze gold accents.",
-          colors: [
-            { role: "background", hex: "#0A0A0A", name: "Onyx Satin" },
-            { role: "surface", hex: "#171717", name: "Studio Charcoal" },
-            { role: "primary", hex: "#D4AF37", name: "Metallic Gold" },
-            { role: "secondary", hex: "#E5E5E5", name: "Platinum Grey" },
-            { role: "accent", hex: "#C5A059", name: "Warm Champagne" },
-            { role: "text", hex: "#FAFAFA", name: "Silk White" }
-          ]
-        };
-      }
-
-      // Default Kurama Spectrum
-      return {
-        title: "Kurama Chromatic Intelligence",
-        reply: `Engineered an ergonomic color system tailored for "${prompt}". High compliance ratios, vivid interactive triggers, and balanced contrast.`,
-        colors: [
-          { role: "background", hex: "#050608", name: "Obsidian Deep" },
-          { role: "surface", hex: "#13151D", name: "Frosted Container" },
-          { role: "primary", hex: "#39FF14", name: "Volt Green" },
-          { role: "secondary", hex: "#2F69FF", name: "Cobalt Blue" },
-          { role: "accent", hex: "#00F0FF", name: "Electric Cyan" },
-          { role: "text", hex: "#FFFFFF", name: "Signal White" }
-        ]
-      };
-    }
-
-    async function handleUserPrompt(promptText) {
-      if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
-
-      // 1. Render User Bubble
-      const userRow = document.createElement('div');
-      userRow.className = 'chat-row user';
-      userRow.innerHTML = `<div class="chat-bubble-user">${escapeHtml(promptText)}</div>`;
-      kuramaChatBody.appendChild(userRow);
-      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-
-      // 2. Generate or fetch palette
-      let palette;
-      try {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: promptText })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          palette = {
-            title: data.name || "Kurama Palette",
-            reply: data.reply || "Generated custom color scheme.",
-            colors: data.colors.map(c => ({ role: c.role, hex: c.hex, name: c.usage || c.role }))
-          };
-        } else {
-          palette = generatePalette(promptText);
-        }
-      } catch (err) {
-        palette = generatePalette(promptText);
-      }
-
-      // Calculate WCAG contrast against background
-      const bgHex = palette.colors.find(c => c.role === 'background')?.hex || "#000000";
-      const textHex = palette.colors.find(c => c.role === 'text')?.hex || "#ffffff";
-      const primaryHex = palette.colors.find(c => c.role === 'primary')?.hex || "#39FF14";
-      const textRatio = getContrastRatio(textHex, bgHex);
-      const primaryRatio = getContrastRatio(primaryHex, bgHex);
-
-      // 3. Render Bot Response
-      const botRow = document.createElement('div');
-      botRow.className = 'chat-row bot';
-
-      let swatchesHtml = '';
-      palette.colors.forEach(col => {
-        swatchesHtml += `
-          <div class="swatch-card" onclick="navigator.clipboard.writeText('${col.hex}'); showToast('Copied ${col.hex}')">
-            <div class="swatch-color-box" style="background-color: ${col.hex}"></div>
-            <div class="swatch-meta">
-              <span class="swatch-role">${col.role}</span>
-              <span class="swatch-hex">${col.hex}</span>
-            </div>
-          </div>
-        `;
-      });
-
-      botRow.innerHTML = `
-        <div class="chat-bubble-bot">
-          <div class="bot-reply-text">
-            <strong>${palette.title}:</strong> ${escapeHtml(palette.reply)}
-          </div>
-
-          <div class="swatches-grid">
-            ${swatchesHtml}
-          </div>
-
-          <div class="contrast-badge-row">
-            <span class="contrast-tag pass">Text / BG: ${textRatio}:1 (AAA)</span>
-            <span class="contrast-tag pass">Primary / BG: ${primaryRatio}:1 (AA)</span>
-            <span class="contrast-tag">WCAG 2.1 Compliant</span>
-          </div>
-
-          <div class="palette-actions">
-            <button class="btn-palette-action" onclick="copyCssVars('${palette.colors.map(c => `--color-${c.role}: ${c.hex};`).join(' ')}')">Copy CSS Variables</button>
-            <button class="btn-palette-action" onclick="copyJson('${escapeHtml(JSON.stringify(palette.colors))}')">Copy JSON</button>
-          </div>
-        </div>
-      `;
-
-      kuramaChatBody.appendChild(botRow);
-      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-
-      // Update 3D sphere colors to reflect new palette!
-      update3DPalette(palette);
-    }
-
-    function update3DPalette(palette) {
-      const map = {};
-      palette.colors.forEach(c => { map[c.role] = c.hex; });
-
-      if (map.background) paletteTarget.pastel.set(map.background);
-      if (map.surface) paletteTarget.light.set(map.surface);
-      if (map.primary) paletteTarget.medium.set(map.primary);
-      if (map.secondary) paletteTarget.deep.set(map.secondary);
-      if (map.accent) paletteTarget.glass.set(map.accent);
-
-      if (map.primary) {
-        document.documentElement.style.setProperty('--neon-accent', map.primary);
-      }
-    }
-
-    window.copyCssVars = (varsStr) => {
-      navigator.clipboard.writeText(`:root {\n  ${varsStr.replace(/;/g, ';\n ')}\n}`);
-      showToast('CSS Variables copied');
-    };
-
-    window.copyJson = (jsonStr) => {
-      navigator.clipboard.writeText(jsonStr);
-      showToast('Palette JSON copied');
-    };
-
-    window.showToast = showToast;
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
   </script>
 </body>
 </html>
