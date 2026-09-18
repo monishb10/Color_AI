@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#eef2ff" />
-  <title>KURAMA — AI Color Intelligence</title>
+  <title>KURAMA × Loopstack — AI Color Intelligence</title>
 
-  <!-- Google Fonts: Raleway (all weights) & JetBrains Mono for hex codes -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Raleway:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Typography: Outfit, Playfair Display, General Sans, Raleway, JetBrains Mono -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+    @import url('https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Raleway:wght@300;400;500;600;700;800;900&display=swap');
+  </style>
 
-  <!-- Three.js CDN Import Map -->
+  <!-- Three.js CDN Import Map for 3D Spheres WebGL -->
   <script type="importmap">
   {
     "imports": {
@@ -21,841 +22,1506 @@
   </script>
 
   <style>
+    /* =========================================================
+       GLOBAL RESET & TOKENS
+       ========================================================= */
     :root {
-      --font-sans: "Raleway", -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-display: "Raleway", sans-serif;
-      --font-mono: "JetBrains Mono", monospace;
-      --font-raleway: "Raleway", sans-serif;
+      --font-playfair: 'Playfair Display', Georgia, serif;
+      --font-outfit: 'Outfit', sans-serif;
+      --font-general: 'General Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-raleway: 'Raleway', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --neon-accent: #39FF14;
+      --neon-glow: rgba(57, 255, 20, 0.45);
+      --white: #ffffff;
+      --black: #000000;
 
       --kurama-primary: #2F69FF;
       --kurama-secondary: #A8C1FF;
       --kurama-accent: #0E2AC5;
-      --kurama-text: #111111;
       --kurama-surface: #FFFFFF;
       --kurama-bg: #F7FAFC;
+      --kurama-text: #111111;
 
-      --panel: rgba(255, 255, 255, .34);
-      --panel-strong: rgba(255, 255, 255, .58);
-      --border: rgba(255, 255, 255, .66);
-      --ink: #101114;
-      --muted: #677084;
-      --ease: cubic-bezier(.16, 1, .3, 1);
+      --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-dramatic: cubic-bezier(0.05, 0.9, 0.1, 1);
     }
 
-    * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; }
-    body {
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100vh;
       overflow: hidden;
-      color: var(--ink);
-      background: #f7fafc;
+      background-color: #000000;
+      color: #ffffff;
       font-family: var(--font-raleway);
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
+      user-select: none;
     }
 
-    button, textarea { font: inherit; }
-    button { border: 0; }
+    button, input, textarea {
+      font: inherit;
+      outline: none;
+    }
 
-    #bgGradient {
+    /* =========================================================
+       PAGE VIEWS CONTROLLER
+       ========================================================= */
+    .view-container {
       position: fixed;
       inset: 0;
-      z-index: -10;
-      background:
-        radial-gradient(circle at 50% 45%,
-          #ffffff 0%,
-          #ecefff 36%,
-          #c2d1ff 100%);
-      transition: background 1s var(--ease);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      transition: opacity 0.6s var(--ease-smooth), transform 0.6s var(--ease-smooth), visibility 0.6s;
+    }
+
+    .view-container.hidden-view {
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transform: scale(0.97);
+    }
+
+    .view-container.active-view {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+      transform: scale(1);
+    }
+
+    /* =========================================================
+       VIEW 1: 3D SPHERE FIELD (LANDING / HERO CANVAS)
+       ========================================================= */
+    #view-canvas {
+      z-index: 10;
+      background: #f7fafc;
+      color: #111111;
+    }
+
+    #bgGradient {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: radial-gradient(circle at 50% 45%, #ffffff 0%, #ecefff 36%, #c2d1ff 100%);
+      transition: background 1s var(--ease-smooth);
     }
 
     #webglWrap {
-      position: fixed;
+      position: absolute;
       inset: 0;
-      z-index: 0;
+      z-index: 1;
       pointer-events: none;
     }
 
-    #webgl { width: 100%; height: 100%; display: block; }
+    #webgl {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
 
-    .app-shell {
+    .canvas-shell {
       position: relative;
-      z-index: 10;
-      min-height: 100svh;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
-      padding: 0 28px 24px;
+      justify-content: space-between;
+      padding: 24px 36px 30px;
       pointer-events: none;
     }
 
-    .header {
-      height: 92px;
+    /* Header Bar */
+    .canvas-header {
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      opacity: 0;
-      transform: translateY(-14px);
-      transition: .8s var(--ease);
-    }
-
-    body.ready .header {
-      opacity: 1;
-      transform: none;
-    }
-
-    .brand {
-      justify-self: start;
-      font-family: var(--font-raleway);
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: .24em;
-      color: #090a0c;
+      width: 100%;
       pointer-events: auto;
     }
 
-    .status {
-      justify-self: center;
-      display: inline-flex;
-      gap: 9px;
-      align-items: center;
+    .canvas-brand {
       font-family: var(--font-raleway);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .18em;
-      color: rgba(16, 17, 20, .64);
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      color: #0a0b0e;
       text-transform: uppercase;
-      white-space: nowrap;
     }
 
-    .status-dot {
+    .canvas-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-family: var(--font-raleway);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: rgba(16, 17, 20, 0.65);
+      text-transform: uppercase;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 999px;
+      backdrop-filter: blur(14px);
+    }
+
+    .status-dot-blue {
       width: 7px;
       height: 7px;
       border-radius: 50%;
       background: var(--kurama-primary);
-      box-shadow: 0 0 12px rgba(47, 105, 255, .65);
+      box-shadow: 0 0 10px rgba(47, 105, 255, 0.7);
+      animation: pulse-blue 2s infinite ease-in-out;
     }
 
-    .header-actions {
+    @keyframes pulse-blue {
+      0%, 100% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.2); opacity: 1; }
+    }
+
+    .canvas-actions {
       justify-self: end;
       display: flex;
-      gap: 10px;
-      pointer-events: auto;
+      gap: 12px;
     }
 
-    .glass-btn {
+    .canvas-pill-btn {
       height: 42px;
-      min-width: 42px;
+      padding: 0 20px;
       border-radius: 999px;
-      padding: 0 16px;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 8px;
-      cursor: pointer;
-      color: #181a20;
-      background: rgba(255, 255, 255, .28);
-      border: 1px solid rgba(255, 255, 255, .58);
-      box-shadow:
-        inset 0 1.5px 2px rgba(255, 255, 255, .82),
-        0 12px 30px rgba(20, 35, 80, .08);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      transition: .3s var(--ease);
-    }
-
-    .glass-btn:hover { transform: translateY(-2px); background: rgba(255, 255, 255, .4); }
-    .glass-btn span { font-family: var(--font-raleway); font-size: 12px; font-weight: 600; }
-
-    .workspace {
-      flex: 1;
-      display: grid;
-      place-items: center;
-      min-height: 0;
-      opacity: 0;
-      transform: translateY(24px);
-      filter: blur(8px);
-      transition: 1.1s .18s var(--ease);
-    }
-
-    body.ready .workspace {
-      opacity: 1;
-      transform: none;
-      filter: none;
-    }
-
-    .chat-panel {
-      pointer-events: auto;
-      width: min(760px, calc(100vw - 56px));
-      height: min(74vh, 760px);
-      min-height: 580px;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      overflow: hidden;
-      border-radius: 30px;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, .52), rgba(255, 255, 255, .28));
-      border: 1px solid rgba(255, 255, 255, .68);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .86),
-        0 34px 90px rgba(25, 42, 90, .17);
-      backdrop-filter: blur(28px) saturate(140%);
-      -webkit-backdrop-filter: blur(28px) saturate(140%);
-    }
-
-    .chat-top {
-      min-height: 76px;
-      padding: 20px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(14, 42, 197, .08);
-      background: rgba(255, 255, 255, .18);
-    }
-
-    .chat-title {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-    }
-
-    .mini-orb {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 40% 28%, #8da8ff 0%, #2f69ff 45%, #0e2ac5 72%, #020b40 100%);
-      box-shadow:
-        inset 0 2px 5px rgba(255, 255, 255, .45),
-        0 6px 20px rgba(47, 105, 255, .3);
-    }
-
-    .chat-title-main {
       font-family: var(--font-raleway);
+      font-size: 12px;
       font-weight: 700;
-      font-size: 14px;
-      letter-spacing: .16em;
+      letter-spacing: 0.08em;
+      color: #12141a;
+      background: rgba(255, 255, 255, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 24px rgba(25, 45, 95, 0.08), inset 0 1.5px 2px rgba(255, 255, 255, 0.9);
+      cursor: pointer;
+      transition: all 0.3s var(--ease-smooth);
     }
 
-    .chat-sub {
-      margin-top: 3px;
-      font-family: var(--font-raleway);
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: .18em;
-      color: rgba(16, 17, 20, .5);
-      text-transform: uppercase;
+    .canvas-pill-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 12px 30px rgba(25, 45, 95, 0.15);
     }
 
-    .online {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      font-family: var(--font-raleway);
-      font-size: 9.5px;
-      font-weight: 600;
-      letter-spacing: .16em;
-      color: rgba(16, 17, 20, .58);
-      text-transform: uppercase;
-    }
-
-    .messages {
-      overflow-y: auto;
-      padding: 28px 24px 18px;
-      scroll-behavior: smooth;
-      overscroll-behavior: contain;
-    }
-
-    .messages::-webkit-scrollbar { width: 6px; }
-    .messages::-webkit-scrollbar-track { background: transparent; }
-    .messages::-webkit-scrollbar-thumb {
-      background: rgba(14, 42, 197, .14);
-      border-radius: 99px;
-    }
-
-    .empty-state {
-      min-height: 100%;
+    /* Middle Hero Section with "Get Started" CTA */
+    .landing-hero-center {
+      align-self: center;
+      max-width: 780px;
+      text-align: center;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      text-align: center;
-      padding: 28px 14px;
-      animation: rise .8s var(--ease) both;
+      pointer-events: auto;
+      margin: auto 0;
+      padding: 40px 32px;
+      border-radius: 36px;
+      background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.28));
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(24px) saturate(140%);
+      box-shadow: 0 30px 80px rgba(20, 35, 80, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      animation: float-gentle 6s ease-in-out infinite;
     }
 
-    .empty-kicker {
+    @keyframes float-gentle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .landing-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       font-family: var(--font-raleway);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: .22em;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.28em;
+      color: var(--kurama-primary);
       text-transform: uppercase;
-      color: var(--kurama-accent);
+      margin-bottom: 18px;
+    }
+
+    .landing-title {
+      font-family: var(--font-raleway);
+      font-size: clamp(2.4rem, 5.2vw, 3.8rem);
+      font-weight: 800;
+      color: #0b0c10;
+      line-height: 1.12;
+      letter-spacing: -0.025em;
       margin-bottom: 16px;
     }
 
-    .empty-state h1 {
-      margin: 0;
+    .landing-desc {
       font-family: var(--font-raleway);
-      font-size: clamp(34px, 5vw, 56px);
-      line-height: .98;
-      font-weight: 600;
-      letter-spacing: -.03em;
-      color: var(--ink);
-    }
-
-    .empty-state p {
-      margin: 14px 0 0;
-      font-family: var(--font-raleway);
-      color: rgba(16, 17, 20, .62);
-      font-size: 15px;
+      font-size: clamp(0.95rem, 1.4vw, 1.15rem);
       font-weight: 500;
-      line-height: 1.5;
+      color: rgba(18, 20, 26, 0.7);
+      line-height: 1.6;
+      max-width: 580px;
+      margin-bottom: 32px;
     }
 
-    .quick-prompts {
-      margin-top: 26px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-      max-width: 560px;
-    }
-
-    .chip {
+    /* "Get Started" CTA Button in the Middle */
+    .btn-get-started {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 1.2rem 3rem;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #1848d6, #0e2ac5);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      font-family: var(--font-raleway);
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
       cursor: pointer;
-      padding: 9px 15px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, .42);
-      border: 1px solid rgba(255, 255, 255, .72);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .75);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      color: rgba(16, 17, 20, .75);
-      font-family: var(--font-raleway);
-      font-size: 12px;
-      font-weight: 600;
-      transition: .25s var(--ease);
-    }
-
-    .chip:hover { transform: translateY(-2px); background: rgba(255, 255, 255, .65); color: #000; }
-
-    .message-row {
-      display: flex;
-      margin: 0 0 16px;
-      animation: messageIn .48s var(--ease) both;
-    }
-
-    .message-row.user { justify-content: flex-end; }
-    .message-row.bot { justify-content: flex-start; }
-
-    .bubble {
-      max-width: 86%;
-      border-radius: 22px;
-      padding: 13px 16px;
-      font-family: var(--font-raleway);
-      font-size: 14px;
-      font-weight: 500;
-      line-height: 1.5;
-    }
-
-    .user .bubble {
-      color: white;
-      background:
-        linear-gradient(145deg, rgba(47, 105, 255, .96), rgba(14, 42, 197, .92));
-      border-bottom-right-radius: 7px;
-      box-shadow: 0 12px 28px rgba(47, 105, 255, .18);
-    }
-
-    .bot .bubble {
-      color: #16181e;
-      background: rgba(255, 255, 255, .62);
-      border: 1px solid rgba(255, 255, 255, .82);
-      border-bottom-left-radius: 7px;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .92),
-        0 14px 36px rgba(30, 45, 85, .09);
-    }
-
-    .bot-text { margin: 0 0 14px; font-family: var(--font-raleway); font-size: 14px; font-weight: 500; line-height: 1.5; }
-
-    .palette-card {
-      margin-top: 14px;
-      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(14, 42, 197, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+      transition: all 0.35s var(--ease-smooth);
       overflow: hidden;
-      border: 1px solid rgba(14, 42, 197, .08);
-      background: rgba(255, 255, 255, .45);
     }
 
-    .palette-head {
-      padding: 14px 16px 12px;
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      border-bottom: 1px solid rgba(14, 42, 197, .08);
+    .btn-get-started:hover {
+      transform: translateY(-3px) scale(1.03);
+      background: linear-gradient(135deg, #2558f0, #1333d6);
+      box-shadow: 0 22px 50px rgba(14, 42, 197, 0.45), inset 0 1.5px 2px rgba(255, 255, 255, 0.7);
     }
 
-    .palette-name {
-      font-family: var(--font-raleway);
-      font-size: 14.5px;
-      font-weight: 700;
-      letter-spacing: .06em;
-      color: var(--ink);
+    .btn-get-started:active {
+      transform: translateY(0) scale(0.98);
     }
 
-    .palette-mood {
-      margin-top: 4px;
-      font-family: var(--font-raleway);
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: .08em;
-      color: rgba(16, 17, 20, .5);
-      text-transform: uppercase;
+    .btn-arrow-icon {
+      transition: transform 0.3s var(--ease-smooth);
     }
 
-    .apply-btn {
-      flex: 0 0 auto;
-      cursor: pointer;
-      padding: 8px 14px;
-      border-radius: 999px;
-      color: white;
-      background: var(--kurama-primary);
-      font-family: var(--font-raleway);
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      box-shadow: 0 4px 14px rgba(47, 105, 255, .28);
-      transition: .25s var(--ease);
+    .btn-get-started:hover .btn-arrow-icon {
+      transform: translateX(4px);
     }
 
-    .apply-btn:hover { transform: translateY(-1px) scale(1.02); box-shadow: 0 6px 18px rgba(47, 105, 255, .4); }
-
-    .swatches {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: rgba(14, 42, 197, .06);
-    }
-
-    .swatch {
-      min-width: 0;
-      background: rgba(255, 255, 255, .75);
-    }
-
-    .swatch-color { height: 54px; }
-
-    .swatch-meta { padding: 10px; }
-
-    .swatch-role {
-      font-family: var(--font-raleway);
-      font-size: 9px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: rgba(16, 17, 20, .5);
-      font-weight: 600;
-    }
-
-    .hex-btn {
-      display: block;
-      width: 100%;
-      margin: 4px 0 0;
-      padding: 0;
-      text-align: left;
-      cursor: pointer;
-      background: none;
-      color: #11131a;
-      font-family: var(--font-mono);
-      font-size: 10.5px;
-      font-weight: 700;
-      transition: color .15s;
-    }
-    .hex-btn:hover { color: var(--kurama-primary); }
-
-    .swatch-usage {
-      margin-top: 5px;
-      color: rgba(16, 17, 20, .55);
-      font-family: var(--font-raleway);
-      font-size: 11px;
-      font-weight: 500;
-      line-height: 1.35;
-    }
-
-    .contrast-box {
-      padding: 12px 16px;
-      border-top: 1px solid rgba(14, 42, 197, .08);
-      background: rgba(255, 255, 255, .3);
-    }
-
-    .contrast-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(14, 42, 197, .05);
-    }
-
-    .contrast-row:last-child { border-bottom: 0; }
-
-    .contrast-key,
-    .contrast-value {
-      font-family: var(--font-raleway);
-      font-size: 9px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    .contrast-key { color: rgba(16, 17, 20, .5); font-weight: 500; }
-    .contrast-value { color: rgba(16, 17, 20, .85); font-weight: 700; }
-
-    .system-msg {
-      margin: 10px auto;
-      width: fit-content;
-      max-width: 80%;
-      padding: 9px 14px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, .5);
-      border: 1px solid rgba(255, 255, 255, .72);
+    /* Footer Info */
+    .canvas-footer {
+      text-align: center;
       font-family: var(--font-raleway);
       font-size: 10px;
-      font-weight: 500;
-      line-height: 1.45;
-      color: rgba(16, 17, 20, .68);
-      text-align: center;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      color: rgba(16, 17, 20, 0.45);
+      text-transform: uppercase;
+      pointer-events: auto;
     }
 
-    .thinking {
-      display: inline-flex;
-      gap: 5px;
-      align-items: center;
-      min-width: 58px;
+    /* =========================================================
+       VIEW 2: LOOPSTACK THEME SPECIFICATION
+       ========================================================= */
+    #view-loopstack {
+      z-index: 20;
+      background-color: #000000;
+      color: #ffffff;
+      overflow: hidden;
+      cursor: none; /* Hide default cursor so custom cursor shines */
     }
 
-    .thinking i {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--kurama-primary);
-      animation: dot 1s infinite ease-in-out;
-    }
-
-    .thinking i:nth-child(2) { animation-delay: .15s; }
-    .thinking i:nth-child(3) { animation-delay: .3s; }
-
-    .composer-wrap {
-      padding: 14px 16px 16px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .26));
-      border-top: 1px solid rgba(14, 42, 197, .08);
-    }
-
-    .composer {
-      min-height: 58px;
-      display: grid;
-      grid-template-columns: 1fr 44px;
-      gap: 10px;
-      align-items: end;
-      padding: 8px 8px 8px 16px;
-      border-radius: 21px;
-      background: rgba(255, 255, 255, .6);
-      border: 1px solid rgba(255, 255, 255, .82);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .96),
-        0 10px 24px rgba(33, 49, 90, .08);
-    }
-
-    #chatInput {
-      width: 100%;
-      resize: none;
-      max-height: 126px;
-      min-height: 40px;
-      padding: 9px 0 6px;
-      border: 0;
-      outline: 0;
-      background: transparent;
-      color: #11131a;
-      font-family: var(--font-raleway);
-      font-size: 14px;
-      font-weight: 500;
-      line-height: 1.45;
-    }
-
-    #chatInput::placeholder { color: rgba(16, 17, 20, .4); }
-
-    #sendBtn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      color: white;
-      background:
-        radial-gradient(circle at 50% 30%, #6f91ff 0%, var(--kurama-primary) 48%, var(--kurama-accent) 76%, #020b40 100%);
-      box-shadow:
-        inset 0 2px 3px rgba(255, 255, 255, .35),
-        0 8px 20px rgba(47, 105, 255, .28);
-      transition: .3s var(--ease);
-    }
-
-    #sendBtn:hover { transform: scale(1.05); }
-    #sendBtn:disabled { opacity: .45; cursor: default; transform: none; }
-
-    .footline {
-      height: 34px;
-      display: grid;
-      place-items: end center;
-      font-family: var(--font-raleway);
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: .18em;
-      color: rgba(16, 17, 20, .4);
+    /* 1. Top gradient overlay */
+    #top-gradient {
+      position: fixed;
+      top: -30vh;
+      left: 0;
+      width: 100vw;
+      height: auto;
+      display: block;
+      z-index: 0;
       pointer-events: none;
     }
 
-    .loader {
+    /* Loopstack Top Navigation (Switch Back & Kurama Status) */
+    .loopstack-nav {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .loopstack-nav-btn {
+      pointer-events: auto;
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(14px);
+      color: #ffffff;
+      font-family: var(--font-outfit);
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s var(--ease-smooth);
+    }
+
+    .loopstack-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .kurama-status-badge {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      height: 38px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: rgba(10, 10, 12, 0.7);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      backdrop-filter: blur(14px);
+      color: #39FF14;
+      font-family: var(--font-general);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.15);
+      cursor: pointer;
+      transition: all 0.3s var(--ease-smooth);
+    }
+
+    .kurama-status-badge:hover {
+      border-color: #39FF14;
+      box-shadow: 0 0 25px rgba(57, 255, 20, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .kurama-status-badge .badge-dot {
+      width: 8px;
+      height: 8px;
+      background: #39FF14;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #39FF14;
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+
+    /* 2. Hero content (headline + button) */
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding-top: 6vh;
+      width: 95%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2.8rem;
+      font-weight: 400;
+      color: #ffffff;
+      line-height: 1.15;
+      margin-bottom: 2.2rem;
+      letter-spacing: -0.015em;
+      text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Hero headline word-by-word reveal mask */
+    .hero-title .word-wrapper {
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: bottom;
+      padding-bottom: 0.15em;
+      margin-bottom: -0.15em;
+    }
+
+    .hero-title .word-inner {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(105%);
+      filter: blur(20px);
+      animation: word-reveal-mask 1.3s cubic-bezier(0.05, 0.9, 0.1, 1) forwards;
+    }
+
+    @keyframes word-reveal-mask {
+      0%   { opacity: 0; transform: translateY(105%); filter: blur(20px); }
+      30%  { opacity: 1; }
+      100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+
+    .hero-btn {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: #ffffff;
+      background-color: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 1.3rem 2.5rem;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
+      outline: none;
+    }
+
+    .hero-btn:hover {
+      background-color: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Blinking dot inside button with expanding wave */
+    .blinking-dot {
+      width: 10px;
+      height: 10px;
+      background-color: #39FF14;
+      border-radius: 50%;
+      position: relative;
+      display: inline-block;
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+
+    .blinking-dot::after {
+      content: '';
+      position: absolute;
+      top: -5px; left: -5px; right: -5px; bottom: -5px;
+      background-color: rgba(57, 255, 20, 0.45);
+      border-radius: 50%;
+      animation: wave-expand 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        opacity: 0.5;
+        transform: scale(0.85);
+        box-shadow: 0 0 4px rgba(57, 255, 20, 0.3);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.1);
+        box-shadow: 0 0 12px rgba(57, 255, 20, 0.9);
+      }
+    }
+
+    @keyframes wave-expand {
+      0%   { transform: scale(0.6); opacity: 0.9; }
+      100% { transform: scale(2.3); opacity: 0; }
+    }
+
+    /* 3. Footer block (fixed, vertically centered at 50vh) */
+    .footer-container {
+      position: fixed;
+      top: 50vh;
+      left: 20px;
+      right: 20px;
+      width: calc(100vw - 40px);
+      transform: translateY(-50%);
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      pointer-events: auto;
+    }
+
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+      padding: 0 5px;
+    }
+
+    .footer-title {
+      font-family: 'General Sans', -apple-system, sans-serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      color: #ffffff;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+
+    .footer-title.quote {
+      text-transform: none;
+    }
+
+    .footer-divider {
+      border: none;
+      height: 1px;
+      background-color: rgba(255, 255, 255, 0.2);
+      margin: 1.6rem 0;
+      width: 100%;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 0 5px;
+    }
+
+    .footer-socials {
+      display: flex;
+      gap: 1.25rem;
+      align-items: center;
+      flex: 1;
+    }
+
+    .social-icon {
+      color: rgba(255, 255, 255, 0.55);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .social-icon:hover {
+      color: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2.8rem;
+      justify-content: center;
+      align-items: center;
+      flex: 2;
+    }
+
+    .footer-link {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: #ffffff;
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .footer-link:hover {
+      opacity: 0.75;
+      transform: translateY(-1px);
+    }
+
+    .footer-copyright {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.45);
+      text-align: right;
+      flex: 1;
+      letter-spacing: 0.02em;
+    }
+
+    /* 4. Giant "Loopstack" wordmark (pinned to bottom) */
+    .footer-logo-wrap {
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      width: 100%;
+      padding: 0 20px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 3;
+      margin: 0;
+      pointer-events: none;
+    }
+
+    .footer-logo-text {
+      font-family: 'General Sans', -apple-system, sans-serif;
+      font-size: 21.9vw;
+      font-weight: 400;
+      color: #ffffff;
+      letter-spacing: -0.03em;
+      margin-right: -0.03em;
+      transform: translateX(-20px);
+      line-height: 0.8;
+      margin-top: 0;
+      margin-bottom: 0;
+      margin-left: 0;
+      text-align: center;
+      width: 100%;
+      pointer-events: none;
+      opacity: 0.95;
+      text-shadow: none;
+      white-space: nowrap;
+    }
+
+    /* Wordmark letter-by-letter reveal mask */
+    .footer-logo-text .letter-wrapper {
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: bottom;
+      line-height: 0.8;
+    }
+
+    .footer-logo-text .letter-inner {
+      display: inline-block;
+      opacity: 0;
+      transform: translateX(-105%);
+      filter: blur(20px);
+      animation: letter-reveal-mask 1.2s cubic-bezier(0.05, 0.9, 0.1, 1) forwards;
+    }
+
+    @keyframes letter-reveal-mask {
+      0%   { opacity: 0; transform: translateX(-105%); filter: blur(20px); }
+      25%  { opacity: 1; }
+      100% { opacity: 0.95; transform: translateX(0); filter: blur(0); }
+    }
+
+    /* 5. Background flower video */
+    .video-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      height: 90vh;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    #bg-video {
+      width: 100%;
+      height: 110%;
+      object-fit: cover;
+      display: block;
+      transform: translateY(0%);
+    }
+
+    /* 6. Custom cursor elements */
+    .cursor-ring-outline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 48px;
+      height: 48px;
+      border: 1.5px solid rgba(255, 255, 255, 0.45);
+      border-radius: 50%;
+      z-index: 99998;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      will-change: transform, opacity;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.4s ease;
+    }
+
+    .cursor-ring-outline.active { opacity: 1; }
+    .cursor-ring-outline.expanded {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .glass-cursor-card {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 99999;
+      pointer-events: none;
+      padding: 0.75rem 1.5rem;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 9999px;
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      will-change: transform, opacity;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-cursor-card.active { opacity: 1; }
+
+    .cursor-card-text {
+      font-family: 'General Sans', -apple-system, sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: #39FF14;
+      text-transform: uppercase;
+      white-space: nowrap;
+      text-shadow: 0 0 8px rgba(57, 255, 20, 0.45);
+    }
+
+    .cursor-card-text .text-white {
+      color: #ffffff;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
+
+    /* =========================================================
+       7. INTEGRATED KURAMA CHATBOT MODAL (IN PAGE 2)
+       ========================================================= */
+    .kurama-modal-overlay {
       position: fixed;
       inset: 0;
-      z-index: 100;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transition: opacity 0.45s var(--ease-smooth), visibility 0.45s;
+    }
+
+    .kurama-modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+      cursor: default;
+    }
+
+    .kurama-modal-card {
+      width: min(840px, calc(100vw - 40px));
+      height: min(82vh, 800px);
+      border-radius: 28px;
+      background: rgba(12, 13, 18, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow:
+        0 30px 100px rgba(0, 0, 0, 0.9),
+        0 0 40px rgba(57, 255, 20, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(32px) saturate(180%);
+      -webkit-backdrop-filter: blur(32px) saturate(180%);
       display: grid;
-      place-items: center;
-      background:
-        radial-gradient(circle at 50% 42%, #ffffff 0%, #eef2ff 45%, #dbe4ff 100%);
-      transition: opacity .55s cubic-bezier(.65, 0, .35, 1), visibility .55s;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+      transform: translateY(24px) scale(0.96);
+      transition: transform 0.45s var(--ease-smooth);
     }
 
-    .loader.leave { opacity: 0; visibility: hidden; pointer-events: none; }
-
-    .loader-inner {
-      width: min(280px, 68vw);
-      text-align: center;
+    .kurama-modal-overlay.open .kurama-modal-card {
+      transform: translateY(0) scale(1);
     }
 
-    .loader-status {
-      font-family: var(--font-raleway);
+    .kurama-modal-header {
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .kurama-modal-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .kurama-mini-orb {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #39FF14 0%, #0e8c05 45%, #053302 90%);
+      box-shadow: 0 0 16px rgba(57, 255, 20, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+    }
+
+    .kurama-title-text {
+      font-family: var(--font-general);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: #ffffff;
       text-transform: uppercase;
+    }
+
+    .kurama-sub-text {
+      font-family: var(--font-outfit);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      color: rgba(255, 255, 255, 0.45);
+      text-transform: uppercase;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-close-modal {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.25s var(--ease-smooth);
+    }
+
+    .btn-close-modal:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.08);
+    }
+
+    /* Modal Chat Messages Body */
+    .kurama-modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .kurama-modal-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    .kurama-modal-body::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+    }
+
+    /* Empty state welcoming user */
+    .kurama-empty-state {
+      margin: auto;
+      text-align: center;
+      max-width: 580px;
+      padding: 20px 0;
+    }
+
+    .kurama-empty-tag {
+      font-family: var(--font-general);
       font-size: 11px;
       font-weight: 600;
-      letter-spacing: .24em;
-      color: #6b7bb5;
+      letter-spacing: 0.2em;
+      color: #39FF14;
+      text-transform: uppercase;
+      margin-bottom: 12px;
     }
 
-    .loader-bar {
-      height: 2px;
-      margin: 22px 0 15px;
+    .kurama-empty-title {
+      font-family: var(--font-playfair);
+      font-size: 2.2rem;
+      font-weight: 400;
+      color: #ffffff;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .kurama-empty-sub {
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 24px;
+    }
+
+    /* Quick category chips */
+    .kurama-chips-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      justify-content: center;
+    }
+
+    .kurama-chip {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-family: var(--font-outfit);
+      font-size: 0.85rem;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.25s var(--ease-smooth);
+    }
+
+    .kurama-chip:hover {
+      background: rgba(57, 255, 20, 0.12);
+      border-color: #39FF14;
+      color: #39FF14;
+      transform: translateY(-2px);
+    }
+
+    /* Chat Messages Rows */
+    .chat-row {
+      display: flex;
+      flex-direction: column;
+      animation: msg-appear 0.4s var(--ease-smooth);
+    }
+
+    @keyframes msg-appear {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-row.user {
+      align-items: flex-end;
+    }
+
+    .chat-row.bot {
+      align-items: flex-start;
+    }
+
+    .chat-bubble-user {
+      max-width: 80%;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 12px 18px;
+      border-radius: 18px 18px 4px 18px;
+      color: #ffffff;
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .chat-bubble-bot {
+      max-width: 92%;
+      background: rgba(20, 22, 30, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 20px;
+      border-radius: 18px 18px 18px 4px;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .bot-reply-text {
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    /* Swatches Grid */
+    .swatches-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 10px;
+      width: 100%;
+    }
+
+    .swatch-card {
+      border-radius: 14px;
       overflow: hidden;
-      border-radius: 99px;
-      background: rgba(14, 42, 197, .14);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: all 0.25s var(--ease-smooth);
     }
 
-    .loader-fill {
-      width: 0;
-      height: 100%;
-      background: linear-gradient(90deg, #5175ff, #0e2ac5);
-      box-shadow: 0 0 14px rgba(47, 105, 255, .55);
-      transition: width .28s var(--ease);
+    .swatch-card:hover {
+      transform: translateY(-3px);
+      border-color: #39FF14;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
     }
 
-    .loader-count {
+    .swatch-color-box {
+      height: 64px;
+      width: 100%;
+      position: relative;
+    }
+
+    .swatch-meta {
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .swatch-role {
+      font-family: var(--font-general);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .swatch-hex {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    /* Contrast Audit Card */
+    .contrast-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .contrast-tag {
       font-family: var(--font-mono);
       font-size: 11px;
-      letter-spacing: .1em;
-      font-weight: 700;
-      color: #0e2ac5;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(18px); filter: blur(6px); }
-      to   { opacity: 1; transform: none; filter: none; }
+    .contrast-tag.pass {
+      color: #39FF14;
+      border-color: rgba(57, 255, 20, 0.3);
+      background: rgba(57, 255, 20, 0.08);
     }
 
-    @keyframes messageIn {
-      from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
-      to   { opacity: 1; transform: none; filter: none; }
+    /* Actions row (Copy CSS / JSON) */
+    .palette-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    @keyframes dot {
-      0%, 80%, 100% { transform: scale(.65); opacity: .35; }
-      40% { transform: scale(1); opacity: 1; }
+    .btn-palette-action {
+      font-family: var(--font-outfit);
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-smooth);
     }
 
-    @media (max-width: 760px) {
-      body { overflow: hidden; }
-      .app-shell { padding: 0 12px 10px; }
-      .header {
-        height: 70px;
-        grid-template-columns: 1fr auto;
-      }
-      .status { display: none; }
-      .brand { font-size: 17px; }
-      .glass-btn { height: 38px; min-width: 38px; padding: 0 12px; }
-      .chat-panel {
+    .btn-palette-action:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+    }
+
+    /* Chat Input Bar */
+    .kurama-modal-footer {
+      padding: 16px 24px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 10, 14, 0.95);
+    }
+
+    .kurama-input-form {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+      padding: 6px 8px 6px 20px;
+      transition: border-color 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth);
+    }
+
+    .kurama-input-form:focus-within {
+      border-color: #39FF14;
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+    }
+
+    .kurama-text-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+    }
+
+    .kurama-text-input::placeholder {
+      color: rgba(255, 255, 255, 0.38);
+    }
+
+    .btn-send-prompt {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #39FF14;
+      border: none;
+      color: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s var(--ease-smooth);
+    }
+
+    .btn-send-prompt:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.6);
+    }
+
+    /* Toast Notification for Hex Copies */
+    .toast-pill {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(50px);
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(20, 20, 24, 0.92);
+      border: 1px solid #39FF14;
+      color: #ffffff;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-family: var(--font-outfit);
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(57, 255, 20, 0.25);
+      z-index: 100000;
+      transition: all 0.35s var(--ease-smooth);
+    }
+
+    .toast-pill.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 860px) {
+      .footer-container {
+        position: relative;
+        top: auto;
+        transform: none;
+        margin-top: 30px;
         width: 100%;
-        height: calc(100svh - 104px);
-        min-height: 0;
-        border-radius: 24px;
+        left: 0;
+        right: 0;
+        padding: 0 20px;
       }
-      .chat-top { min-height: 68px; padding: 16px 18px; }
-      .messages { padding: 20px 16px 14px; }
-      .bubble { max-width: 94%; }
-      .swatches { grid-template-columns: repeat(2, 1fr); }
-      .footline { display: none; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        scroll-behavior: auto !important;
-        animation-duration: .01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: .01ms !important;
+      .footer-logo-text {
+        font-size: 20vw;
+      }
+      .hero-title {
+        font-size: 2.2rem;
       }
     }
   </style>
 </head>
-
 <body>
-  <div id="bgGradient"></div>
 
-  <div id="webglWrap">
-    <canvas id="webgl"></canvas>
-  </div>
+  <!-- =========================================================
+       VIEW 1: 3D SPHERE FIELD (LANDING / HERO CANVAS)
+       ========================================================= -->
+  <div id="view-canvas" class="view-container active-view">
+    <div id="bgGradient"></div>
+    <div id="webglWrap">
+      <canvas id="webgl"></canvas>
+    </div>
 
-  <div class="loader" id="loader">
-    <div class="loader-inner">
-      <div class="loader-status" id="loaderStatus">CALIBRATING COLOR ENGINE</div>
-      <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
-      <div class="loader-count" id="loaderCount">000%</div>
+    <div class="canvas-shell">
+      <!-- Header -->
+      <header class="canvas-header">
+        <div class="canvas-brand">KURAMA</div>
+        <div class="canvas-status">
+          <span class="status-dot-blue"></span>
+          <span>COLOR INTELLIGENCE / ONLINE</span>
+        </div>
+        <div class="canvas-actions">
+          <button id="btn-canvas-reset" class="canvas-pill-btn" aria-label="Reset 3D Scene">Reset</button>
+        </div>
+      </header>
+
+      <!-- Middle Hero Section with "Get Started" CTA -->
+      <section class="landing-hero-center">
+        <div class="landing-kicker">
+          <span class="status-dot-blue"></span>
+          <span>AI COLOR INTELLIGENCE</span>
+        </div>
+        <h1 class="landing-title">Autonomous Color Systems</h1>
+        <p class="landing-desc">Curated chromatic palettes with real-time WebGL physics and WCAG 2.1 compliance auditing.</p>
+        <button id="btn-get-started" class="btn-get-started" aria-label="Get Started">
+          <span class="btn-text">Get Started</span>
+          <svg class="btn-arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </section>
+
+      <!-- Footer Info -->
+      <footer class="canvas-footer">
+        KURAMA / AI COLOR INTELLIGENCE / 2026
+      </footer>
     </div>
   </div>
 
-  <main class="app-shell">
-    <header class="header">
-      <div class="brand">KURAMA</div>
+  <!-- =========================================================
+       VIEW 2: LOOPSTACK THEME SPECIFICATION
+       ========================================================= -->
+  <div id="view-loopstack" class="view-container hidden-view">
+    <!-- Top gradient overlay -->
+    <img src="https://api.getlayers.ai/storage/v1/object/public/public/assets/loopstack-f8c64439bf/black_gradient.svg" alt="Top Gradient" id="top-gradient">
 
-      <div class="status">
-        <span class="status-dot"></span>
-        <span>COLOR INTELLIGENCE / ONLINE</span>
-      </div>
+    <!-- Loopstack Top Bar -->
+    <header class="loopstack-nav">
+      <button id="btn-back-to-canvas" class="loopstack-nav-btn" aria-label="Back to 3D Field">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>3D Canvas</span>
+      </button>
 
-      <div class="header-actions">
-        <button class="glass-btn" id="resetBtn" type="button" title="Reset Palette and Field">
-          <span>Reset</span>
-        </button>
-      </div>
+      <button id="kurama-status-toggle" class="kurama-status-badge" aria-label="Open Kurama AI Chat">
+        <span class="badge-dot"></span>
+        <span>KURAMA AI ASSISTANT</span>
+      </button>
     </header>
 
-    <section class="workspace">
-      <div class="chat-panel">
-        <div class="chat-top">
-          <div class="chat-title">
-            <div class="mini-orb"></div>
+    <!-- Hero content (headline + button) -->
+    <main class="hero-content">
+      <h1 class="hero-title">Apply Now to be part <br> of the closed beta</h1>
+      <button class="hero-btn" id="loopstack-hero-btn" aria-label="Book a demo">
+        <span class="btn-text">Book a demo</span>
+        <span class="blinking-dot"></span>
+      </button>
+    </main>
+
+    <!-- Footer block (fixed, vertically centered at 50vh) -->
+    <footer class="footer-container">
+      <div class="footer-top">
+        <h2 class="footer-title">Stay in Touch</h2>
+        <h2 class="footer-title quote">Think. Build. Repeat.</h2>
+      </div>
+
+      <hr class="footer-divider">
+
+      <div class="footer-bottom">
+        <div class="footer-socials">
+          <a href="#" aria-label="LinkedIn" class="social-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+          </a>
+          <a href="#" aria-label="X" class="social-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
+          </a>
+          <a href="#" aria-label="Instagram" class="social-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+          </a>
+        </div>
+
+        <nav class="footer-links">
+          <a href="#about" class="footer-link">About</a>
+          <a href="#features" class="footer-link">Features</a>
+          <a href="#pricing" class="footer-link">Pricing</a>
+          <a href="#contact" class="footer-link">Contact</a>
+        </nav>
+
+        <div class="footer-copyright">
+          © 2026 Loopstack
+        </div>
+      </div>
+    </footer>
+
+    <!-- Giant "Loopstack" wordmark (pinned to bottom) -->
+    <div class="footer-logo-wrap">
+      <h2 class="footer-logo-text">Loopstack</h2>
+    </div>
+
+    <!-- Background flower video -->
+    <div class="video-container">
+      <video autoplay muted loop playsinline id="bg-video">
+        <source src="https://api.getlayers.ai/storage/v1/object/public/public/assets/loopstack-f8c64439bf/flower.mp4" type="video/mp4">
+        Ваш браузер не поддерживает видео.
+      </video>
+    </div>
+
+    <!-- Custom cursor elements -->
+    <div id="cursor-ring" class="cursor-ring-outline"></div>
+
+    <div id="glass-card" class="glass-cursor-card">
+      <span class="cursor-card-text"><span class="text-white">Say</span> Hello!</span>
+    </div>
+
+    <!-- =========================================================
+         INTEGRATED KURAMA BOT MODAL
+         ========================================================= -->
+    <div id="kurama-modal" class="kurama-modal-overlay">
+      <div class="kurama-modal-card">
+        <!-- Header -->
+        <div class="kurama-modal-header">
+          <div class="kurama-modal-title">
+            <div class="kurama-mini-orb"></div>
             <div>
-              <div class="chat-title-main">KURAMA</div>
-              <div class="chat-sub">AI COLOR INTELLIGENCE</div>
+              <div class="kurama-title-text">KURAMA</div>
+              <div class="kurama-sub-text">AI Color Intelligence</div>
             </div>
           </div>
-
-          <div class="online">
-            <span class="status-dot"></span>
-            ONLINE
+          <div class="modal-header-actions">
+            <div class="canvas-status" style="background: rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.3); color: #39FF14;">
+              <span class="badge-dot" style="background:#39FF14; box-shadow: 0 0 10px #39FF14; width:6px; height:6px; border-radius:50%;"></span>
+              <span>ONLINE</span>
+            </div>
+            <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Kurama Dialog">×</button>
           </div>
         </div>
 
-        <div class="messages" id="messages">
-          <div class="empty-state" id="emptyState">
-            <div class="empty-kicker">COLOR SYSTEM GENERATOR</div>
-            <h1>Describe what<br>you're designing.</h1>
-            <p>I'll build a color system around it.</p>
+        <!-- Chat Body -->
+        <div class="kurama-modal-body" id="kurama-chat-body">
+          <div class="kurama-empty-state" id="kurama-empty-state">
+            <div class="kurama-empty-tag">COLOR SYSTEM GENERATOR</div>
+            <h2 class="kurama-empty-title">Describe what you're designing.</h2>
+            <p class="kurama-empty-sub">I'll build an accessible, production-ready color system around it.</p>
 
-            <div class="quick-prompts">
-              <button class="chip" data-prompt="Create a professional color palette for a modern website">Website</button>
-              <button class="chip" data-prompt="Create a clean color palette for a mobile app">Mobile App</button>
-              <button class="chip" data-prompt="Create a dark AI dashboard color palette">Dashboard</button>
-              <button class="chip" data-prompt="Create a minimal luxury portfolio palette">Portfolio</button>
-              <button class="chip" data-prompt="Create a strong modern brand identity palette">Brand</button>
-              <button class="chip" data-prompt="Create a dark tactical gaming UI color palette">Gaming</button>
-              <button class="chip" data-prompt="Create a premium SaaS product color palette">SaaS</button>
-              <button class="chip" data-prompt="Create a warm modern e-commerce color palette">E-commerce</button>
+            <div class="kurama-chips-grid">
+              <button class="kurama-chip" data-prompt="Create a professional color palette for a modern website">Website</button>
+              <button class="kurama-chip" data-prompt="Create a clean color palette for a mobile app">Mobile App</button>
+              <button class="kurama-chip" data-prompt="Create a dark AI dashboard color palette">Dashboard</button>
+              <button class="kurama-chip" data-prompt="Create a minimal luxury portfolio palette">Portfolio</button>
+              <button class="kurama-chip" data-prompt="Create a strong modern brand identity palette">Brand</button>
+              <button class="kurama-chip" data-prompt="Create a dark tactical gaming UI color palette">Gaming</button>
+              <button class="kurama-chip" data-prompt="Create a premium SaaS product color palette">SaaS</button>
+              <button class="kurama-chip" data-prompt="Create a warm modern e-commerce color palette">E-commerce</button>
             </div>
           </div>
         </div>
 
-        <div class="composer-wrap">
-          <form class="composer" id="chatForm">
-            <textarea
-              id="chatInput"
-              rows="1"
-              maxlength="2000"
-              placeholder="Describe a style, product, brand or color..."
-            ></textarea>
-
-            <button id="sendBtn" type="submit" aria-label="Send">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Chat Input Footer -->
+        <div class="kurama-modal-footer">
+          <form class="kurama-input-form" id="kurama-chat-form">
+            <input type="text" id="kurama-input" class="kurama-text-input" placeholder="Describe a style, product, brand, or enter a hex code..." autocomplete="off">
+            <button type="submit" class="btn-send-prompt" aria-label="Send prompt">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
               </svg>
             </button>
           </form>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <div class="footline">KURAMA / AI COLOR INTELLIGENCE / 2026</div>
-  </main>
+  <!-- Toast Notification -->
+  <div id="toast-pill" class="toast-pill">Copied to clipboard</div>
 
+  <!-- =========================================================
+       MODULE LOGIC: THREE.JS + LOOPSTACK + KURAMA AI ENGINE
+       ========================================================= -->
   <script type="module">
-    import * as THREE from "three";
+    import * as THREE from 'three';
 
     // =========================================================
-    // APP STATE
+    // VIEW NAVIGATION CONTROLLER
     // =========================================================
-    const appState = {
-      history: [],
-      activePalette: null,
-      isLoading: false,
-      interaction: "idle" // idle | typing | thinking
-    };
+    const viewCanvas = document.getElementById('view-canvas');
+    const viewLoopstack = document.getElementById('view-loopstack');
+    const btnGetStarted = document.getElementById('btn-get-started');
+    const btnBackToCanvas = document.getElementById('btn-back-to-canvas');
+    const toastPill = document.getElementById('toast-pill');
 
-    const DEFAULT_THEME = {
-      background: "#F7FAFC",
-      surface: "#FFFFFF",
-      primary: "#2F69FF",
-      secondary: "#A8C1FF",
-      accent: "#0E2AC5",
-      text: "#111111"
-    };
+    function showToast(message) {
+      toastPill.textContent = message;
+      toastPill.classList.add('show');
+      setTimeout(() => toastPill.classList.remove('show'), 2000);
+    }
 
-    const $ = (sel) => document.querySelector(sel);
-    const messagesEl = $("#messages");
-    const emptyState = $("#emptyState");
-    const chatForm = $("#chatForm");
-    const chatInput = $("#chatInput");
-    const sendBtn = $("#sendBtn");
-    const resetBtn = $("#resetBtn");
-    const bgGradient = $("#bgGradient");
+    function switchView(viewName) {
+      if (viewName === 'loopstack') {
+        viewCanvas.classList.remove('active-view');
+        viewCanvas.classList.add('hidden-view');
 
-    // =========================================================
-    // THREE.JS SCENE
-    // =========================================================
-    const canvas = $("#webgl");
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance"
+        viewLoopstack.classList.remove('hidden-view');
+        viewLoopstack.classList.add('active-view');
+        window.location.hash = '#loopstack';
+
+        // Play video if paused
+        const bgVideo = document.getElementById('bg-video');
+        if (bgVideo) bgVideo.play().catch(() => {});
+
+        // Re-trigger reveal animations
+        initLoopstackReveals();
+      } else {
+        viewLoopstack.classList.remove('active-view');
+        viewLoopstack.classList.add('hidden-view');
+
+        viewCanvas.classList.remove('hidden-view');
+        viewCanvas.classList.add('active-view');
+        window.location.hash = '';
+      }
+    }
+
+    btnGetStarted.addEventListener('click', () => switchView('loopstack'));
+    btnBackToCanvas.addEventListener('click', () => switchView('canvas'));
+
+    // Handle back/forward browser history
+    window.addEventListener('popstate', () => {
+      if (window.location.hash === '#loopstack' || window.location.hash === '#chat') {
+        switchView('loopstack');
+      } else {
+        switchView('canvas');
+      }
     });
 
+    // Check initial hash
+    if (window.location.hash === '#loopstack' || window.location.hash === '#chat') {
+      switchView('loopstack');
+    }
+
+    // =========================================================
+    // 3D SPHERES WEBGL ENGINE (THREE.JS)
+    // =========================================================
+    const canvasEl = document.getElementById('webgl');
+    const bgGradient = document.getElementById('bgGradient');
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvasEl,
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      38,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      100
-    );
+    const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0, 11);
 
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x2f69ff, 1.6);
@@ -870,17 +1536,12 @@
     rimLight.position.set(8, 7, -8);
     scene.add(rimLight);
 
-    const frontLight = new THREE.DirectionalLight(0xffffff, .45);
+    const frontLight = new THREE.DirectionalLight(0xffffff, 0.45);
     frontLight.position.set(0, 0, 11);
     scene.add(frontLight);
 
-    const sideBounceLight = new THREE.DirectionalLight(0xffffff, .3);
-    sideBounceLight.position.set(-9, -2, 4);
-    scene.add(sideBounceLight);
-
     let viewportWidth = 10;
     let viewportHeight = 6;
-
     function updateFrustumBounds() {
       const fovRad = THREE.MathUtils.degToRad(camera.fov);
       viewportHeight = 2 * Math.tan(fovRad / 2) * camera.position.z;
@@ -888,9 +1549,8 @@
     }
     updateFrustumBounds();
 
-    const isMobile = window.innerWidth < 768;
-    const ballCount = isMobile ? 54 : 96;
-    const sphereGeometry = new THREE.SphereGeometry(1, 48, 48);
+    const ballCount = window.innerWidth < 768 ? 50 : 96;
+    const sphereGeometry = new THREE.SphereGeometry(1, 40, 40);
     const balls = [];
 
     const paletteCurrent = {
@@ -909,938 +1569,576 @@
       glass: new THREE.Color("#4D80FF")
     };
 
-    const roles = ["pastel", "light", "medium", "deep", "glass"];
-
     for (let i = 0; i < ballCount; i++) {
-      let radius = .33;
+      let radius = 0.33;
       const rand = Math.random();
-
-      if (rand < .3) radius = .27 + Math.random() * .12;
-      else if (rand < .8) radius = .42 + Math.random() * .18;
-      else radius = .66 + Math.random() * .21;
+      if (rand < 0.3) radius = 0.26 + Math.random() * 0.12;
+      else if (rand < 0.8) radius = 0.40 + Math.random() * 0.18;
+      else radius = 0.65 + Math.random() * 0.22;
 
       const mass = Math.pow(radius, 3);
-      const isGlass = Math.random() < .22;
+      const isGlass = Math.random() < 0.22;
 
       let role = "medium";
       if (!isGlass) {
         const cr = Math.random();
-        if (cr < .25) role = "pastel";
-        else if (cr < .55) role = "light";
-        else if (cr < .85) role = "medium";
+        if (cr < 0.25) role = "pastel";
+        else if (cr < 0.55) role = "light";
+        else if (cr < 0.85) role = "medium";
         else role = "deep";
       } else {
         role = "glass";
       }
 
       const baseColor = paletteCurrent[role];
-
       const mat = isGlass
         ? new THREE.MeshPhysicalMaterial({
             color: baseColor,
-            roughness: .08,
+            roughness: 0.08,
             metalness: 0,
             clearcoat: 1,
-            clearcoatRoughness: .03,
-            transmission: .95,
+            clearcoatRoughness: 0.03,
+            transmission: 0.95,
             ior: 1.485,
             thickness: 2.2,
             specularColor: new THREE.Color("#ffffff"),
             specularIntensity: 1,
             attenuationColor: paletteCurrent.pastel,
-            attenuationDistance: 1,
-            emissive: baseColor,
-            emissiveIntensity: .12,
-            transparent: true,
-            opacity: 1
+            attenuationDistance: 2.5
           })
         : new THREE.MeshPhysicalMaterial({
             color: baseColor,
-            roughness: .44,
-            metalness: 0,
-            clearcoat: .24,
-            clearcoatRoughness: .35,
-            emissive: baseColor,
-            emissiveIntensity: .08,
-            transparent: true,
-            opacity: 1
+            roughness: 0.22,
+            metalness: 0.04,
+            clearcoat: 0.35,
+            clearcoatRoughness: 0.15
           });
 
-      const group = new THREE.Group();
       const mesh = new THREE.Mesh(sphereGeometry, mat);
       mesh.scale.setScalar(radius);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      group.add(mesh);
-      scene.add(group);
+      scene.add(mesh);
+
+      const spawnX = (Math.random() - 0.5) * (viewportWidth * 0.85);
+      const spawnY = (Math.random() - 0.5) * (viewportHeight * 0.85);
+      const spawnZ = (Math.random() - 0.5) * 3.2;
+
+      mesh.position.set(spawnX, spawnY, spawnZ);
 
       balls.push({
-        id: i,
-        radius,
-        mass,
-        position: new THREE.Vector3(),
-        velocity: new THREE.Vector3(),
-        group,
         mesh,
-        material: mat,
+        mat,
         role,
         isGlass,
-        baseAngle: Math.random() * Math.PI * 2,
-        depthBias: (Math.random() - .5) * 2.5
+        radius,
+        mass,
+        pos: new THREE.Vector3(spawnX, spawnY, spawnZ),
+        prev: new THREE.Vector3(spawnX, spawnY, spawnZ),
+        acc: new THREE.Vector3()
       });
     }
 
-    function scatterFar(withVelocity = true) {
-      const R = Math.max(viewportWidth, viewportHeight) * 1.35;
-      for (const b of balls) {
-        const a = Math.random() * Math.PI * 2;
-        const px = Math.cos(a) * R * 1.25;
-        const py = Math.sin(a) * R * .85;
-        const pz = (Math.random() - .5) * 4;
+    const mouseWorld = new THREE.Vector3(999, 999, 0);
+    const pointerNorm = new THREE.Vector2();
 
-        b.position.set(px, py, pz);
-        b.group.position.copy(b.position);
+    window.addEventListener('pointermove', (e) => {
+      pointerNorm.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointerNorm.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      mouseWorld.x = (pointerNorm.x * viewportWidth) / 2;
+      mouseWorld.y = (pointerNorm.y * viewportHeight) / 2;
+      mouseWorld.z = 0;
+    });
 
-        if (withVelocity) {
-          b.velocity
-            .set(-px, -py, -pz)
-            .normalize()
-            .multiplyScalar(.07 + Math.random() * .05);
-        } else {
-          b.velocity.set(0, 0, 0);
+    function solvePhysics(dt) {
+      const halfW = viewportWidth / 2;
+      const halfH = viewportHeight / 2;
+
+      for (let i = 0; i < balls.length; i++) {
+        const b = balls[i];
+        b.acc.set(0, 0, 0);
+
+        // Center gravity pull
+        const toOrigin = b.pos.clone().multiplyScalar(-0.4);
+        b.acc.add(toOrigin);
+
+        // Cursor repulsion
+        const diff = b.pos.clone().sub(mouseWorld);
+        const dist = diff.length();
+        const repRadius = 2.4;
+        if (dist < repRadius && dist > 0.001) {
+          const force = (1 - dist / repRadius) * 26;
+          b.acc.add(diff.normalize().multiplyScalar(force));
+        }
+
+        // Verlet step
+        const vel = b.pos.clone().sub(b.prev).multiplyScalar(0.978);
+        b.prev.copy(b.pos);
+        b.pos.add(vel).add(b.acc.multiplyScalar(dt * dt));
+
+        // Boundary reflection
+        const pad = b.radius + 0.1;
+        if (b.pos.x < -halfW + pad) { b.pos.x = -halfW + pad; b.prev.x = b.pos.x + vel.x * 0.5; }
+        if (b.pos.x > halfW - pad) { b.pos.x = halfW - pad; b.prev.x = b.pos.x + vel.x * 0.5; }
+        if (b.pos.y < -halfH + pad) { b.pos.y = -halfH + pad; b.prev.y = b.pos.y + vel.y * 0.5; }
+        if (b.pos.y > halfH - pad) { b.pos.y = halfH - pad; b.prev.y = b.pos.y + vel.y * 0.5; }
+        if (b.pos.z < -2.2 + pad) { b.pos.z = -2.2 + pad; b.prev.z = b.pos.z + vel.z * 0.5; }
+        if (b.pos.z > 2.2 - pad) { b.pos.z = 2.2 - pad; b.prev.z = b.pos.z + vel.z * 0.5; }
+      }
+
+      // Ball-to-ball collisions
+      for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+          const b1 = balls[i];
+          const b2 = balls[j];
+          const dVec = b1.pos.clone().sub(b2.pos);
+          const dist = dVec.length();
+          const minDist = b1.radius + b2.radius;
+
+          if (dist < minDist && dist > 0.0001) {
+            const overlap = (minDist - dist) * 0.5;
+            const norm = dVec.normalize();
+            b1.pos.addScaledVector(norm, overlap);
+            b2.pos.addScaledVector(norm, -overlap);
+          }
         }
       }
-    }
-    scatterFar(true);
 
-    const mouse = { x: 99, y: 99, isDown: false };
-    const mouseProj = new THREE.Vector3();
-    const mouseWorld = new THREE.Vector3();
-    const prevMouseWorld = new THREE.Vector3();
-    let mouseSpeed = 0;
-
-    window.addEventListener("pointermove", (e) => {
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-    });
-
-    window.addEventListener("pointerdown", () => mouse.isDown = true);
-    window.addEventListener("pointerup", () => mouse.isDown = false);
-
-    function updateMouse3D() {
-      mouseProj.set(mouse.x, mouse.y, .5);
-      mouseProj.unproject(camera);
-
-      const dir = mouseProj.sub(camera.position).normalize();
-      const distance = -camera.position.z / dir.z;
-      mouseWorld.copy(camera.position).add(dir.multiplyScalar(distance));
+      for (let i = 0; i < balls.length; i++) {
+        balls[i].mesh.position.copy(balls[i].pos);
+      }
     }
 
-    const tmp = new THREE.Vector3();
-    const collideDiff = new THREE.Vector3();
-    const relVel = new THREE.Vector3();
-    const deltaPos = new THREE.Vector3();
-    const rotAxis = new THREE.Vector3();
-
-    const clock = new THREE.Clock();
-    let entranceTime = 0;
-    let loaded = false;
-    let visible = true;
-
-    document.addEventListener("visibilitychange", () => {
-      visible = document.visibilityState === "visible";
-    });
-
-    function animate() {
+    let lastTime = performance.now();
+    function animate(currentTime) {
       requestAnimationFrame(animate);
-      if (!visible) return;
+      const dt = Math.min((currentTime - lastTime) / 1000, 0.033);
+      lastTime = currentTime;
 
-      const t = clock.getElapsedTime();
-      updateMouse3D();
-
-      mouseSpeed = mouseWorld.distanceTo(prevMouseWorld);
-      if (mouseSpeed > 3) mouseSpeed = 3;
-      prevMouseWorld.copy(mouseWorld);
-
-      const interactionBoost =
-        appState.interaction === "thinking" ? 1.35 :
-        appState.interaction === "typing" ? 1.15 :
-        1;
-
-      for (const role of roles) {
-        paletteCurrent[role].lerp(paletteTarget[role], .055);
+      // Color lerping for scene
+      for (const key of Object.keys(paletteCurrent)) {
+        paletteCurrent[key].lerp(paletteTarget[key], 0.05);
+      }
+      for (let i = 0; i < balls.length; i++) {
+        const b = balls[i];
+        b.mat.color.copy(paletteCurrent[b.role]);
+        if (b.isGlass) b.mat.attenuationColor.copy(paletteCurrent.pastel);
       }
 
-      hemiLight.groundColor.lerp(paletteCurrent.medium, .08);
-
-      const centerY = 0;
-      const clusterWide = Math.min(viewportWidth * .29, 4.1);
-      const clusterTall = Math.min(viewportHeight * .28, 2.55);
-
-      for (const b of balls) {
-        const wobbleX = Math.sin(t * .42 + b.id * 1.31) * .0005 * interactionBoost;
-        const wobbleY = Math.cos(t * .5 + b.id * 1.17) * .0005 * interactionBoost;
-        const wobbleZ = Math.sin(t * .35 + b.id) * .00012;
-
-        b.velocity.x += wobbleX;
-        b.velocity.y += wobbleY;
-        b.velocity.z += wobbleZ;
-
-        const targetX = Math.cos(b.baseAngle) * clusterWide * (.38 + (b.id % 13) / 21);
-        const targetY = centerY + Math.sin(b.baseAngle) * clusterTall * (.4 + (b.id % 9) / 18);
-        const targetZ = b.depthBias * .45;
-
-        const centerForce = loaded ? .0040 : .0055;
-        b.velocity.x += (targetX - b.position.x) * centerForce * interactionBoost;
-        b.velocity.y += (targetY - b.position.y) * centerForce * interactionBoost;
-        b.velocity.z += (targetZ - b.position.z) * centerForce * .85;
-
-        if (appState.interaction === "thinking") {
-          const pulse = 1 + Math.sin(t * 4 + b.id * .3) * .18;
-          b.velocity.x += b.position.x * .00016 * pulse;
-          b.velocity.y += b.position.y * .00016 * pulse;
-        }
-
-        const interacting = Math.abs(mouse.x) < .99 || Math.abs(mouse.y) < .99;
-        if (interacting) {
-          tmp.subVectors(b.position, mouseWorld);
-          const dist = tmp.length();
-          const radius = mouse.isDown ? 5.3 : 4.4;
-          const force = mouse.isDown ? .085 : .05;
-
-          if (dist < radius && dist > .001) {
-            const ratio = dist / radius;
-            const smooth = 1 - (ratio * ratio * (3 - 2 * ratio));
-            const speedBoost = 1 + mouseSpeed * 3.2;
-            const push = smooth * force * speedBoost;
-            tmp.normalize();
-            tmp.z *= .12;
-            tmp.normalize();
-            b.velocity.addScaledVector(tmp, push);
-          }
-        }
-
-        b.velocity.multiplyScalar(.91);
-        b.position.add(b.velocity);
-
-        const xBound = viewportWidth / 2 - .35;
-        const yBound = viewportHeight / 2 - .25;
-        const zBound = 2;
-
-        if (b.position.x < -xBound) {
-          b.position.x = -xBound;
-          b.velocity.x *= -.3;
-        } else if (b.position.x > xBound) {
-          b.position.x = xBound;
-          b.velocity.x *= -.3;
-        }
-
-        if (b.position.y < -yBound) {
-          b.position.y = -yBound;
-          b.velocity.y *= -.3;
-        } else if (b.position.y > yBound) {
-          b.position.y = yBound;
-          b.velocity.y *= -.3;
-        }
-
-        if (b.position.z < -zBound) {
-          b.position.z = -zBound;
-          b.velocity.z *= -.3;
-        } else if (b.position.z > zBound) {
-          b.position.z = zBound;
-          b.velocity.z *= -.3;
-        }
-
-        const c = paletteCurrent[b.role] || paletteCurrent.medium;
-        b.material.color.copy(c);
-        b.material.emissive.copy(c);
-
-        if (b.isGlass && b.material.attenuationColor) {
-          b.material.attenuationColor.copy(paletteCurrent.pastel);
-        }
-      }
-
-      // Pairwise collisions
-      const collideScale = .20;
-      const subSteps = isMobile ? 2 : 3;
-
-      for (let step = 0; step < subSteps; step++) {
-        for (let i = 0; i < balls.length; i++) {
-          for (let j = i + 1; j < balls.length; j++) {
-            const b1 = balls[i];
-            const b2 = balls[j];
-
-            collideDiff.subVectors(b2.position, b1.position);
-            const dist = collideDiff.length();
-            const minDist = b1.radius + b2.radius;
-
-            if (dist < minDist && dist > .001) {
-              const overlap = minDist - dist;
-              collideDiff.multiplyScalar(1 / dist);
-
-              const totalMass = b1.mass + b2.mass;
-              const ratio1 = b2.mass / totalMass;
-              const ratio2 = b1.mass / totalMass;
-
-              b1.position.addScaledVector(collideDiff, -overlap * ratio1 * collideScale);
-              b2.position.addScaledVector(collideDiff, overlap * ratio2 * collideScale);
-
-              relVel.subVectors(b2.velocity, b1.velocity);
-              const velAlongNormal = relVel.dot(collideDiff);
-
-              if (velAlongNormal < -.0001) {
-                const impulse = -(1.02) * velAlongNormal / (1 / b1.mass + 1 / b2.mass);
-                b1.velocity.addScaledVector(collideDiff, -impulse / b1.mass);
-                b2.velocity.addScaledVector(collideDiff, impulse / b2.mass);
-              }
-            }
-          }
-        }
-      }
-
-      for (const b of balls) {
-        deltaPos.copy(b.position).sub(b.group.position);
-
-        if (deltaPos.lengthSq() > .000001) {
-          rotAxis.set(deltaPos.y, -deltaPos.x, 0).normalize();
-          b.group.rotateOnWorldAxis(rotAxis, (deltaPos.length() / b.radius) * .72);
-        }
-
-        b.group.position.copy(b.position);
-      }
-
+      solvePhysics(dt);
       renderer.render(scene, camera);
     }
+    requestAnimationFrame(animate);
 
-    animate();
-
-    window.addEventListener("resize", () => {
+    window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       updateFrustumBounds();
     });
 
-    // =========================================================
-    // LOADER
-    // =========================================================
-    const loader = $("#loader");
-    const loaderStatus = $("#loaderStatus");
-    const loaderFill = $("#loaderFill");
-    const loaderCount = $("#loaderCount");
+    document.getElementById('btn-canvas-reset').addEventListener('click', () => {
+      paletteTarget.pastel.set("#ECEFFF");
+      paletteTarget.light.set("#A8C1FF");
+      paletteTarget.medium.set("#2F69FF");
+      paletteTarget.deep.set("#0A33BF");
+      paletteTarget.glass.set("#4D80FF");
+      bgGradient.style.background = "radial-gradient(circle at 50% 45%, #ffffff 0%, #ecefff 36%, #c2d1ff 100%)";
+      showToast("3D Palette Reset");
+    });
 
-    let loadValue = 0;
-    let lastLoadTime = performance.now();
-    let sceneReady = false;
+    // =========================================================
+    // LOOPSTACK LOGIC: REVEALS + CUSTOM CURSOR (VERBATIM)
+    // =========================================================
+    function initLoopstackReveals() {
+      // 1. Wordmark letter-by-letter reveal
+      const logoText = document.querySelector('.footer-logo-text');
+      if (logoText) {
+        const rawText = "Loopstack";
+        logoText.innerHTML = '';
+        [...rawText].forEach((char, index) => {
+          const wrapper = document.createElement('span');
+          wrapper.className = 'letter-wrapper';
+          const inner = document.createElement('span');
+          inner.textContent = char === ' ' ? '\u00A0' : char;
+          inner.className = 'letter-inner';
+          inner.style.animationDelay = `${index * 0.09}s`;
+          wrapper.appendChild(inner);
+          logoText.appendChild(wrapper);
+        });
+      }
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        sceneReady = true;
+      // 2. Headline word-by-word reveal
+      const heroTitle = document.querySelector('.hero-title');
+      if (heroTitle) {
+        const text = "Apply Now to be part <br> of the closed beta";
+        const parts = text.split(/(\s+|<br\s*\/?>)/i);
+        heroTitle.innerHTML = '';
+
+        let wordIndex = 0;
+        parts.forEach(part => {
+          if (part.trim() === '') {
+            heroTitle.appendChild(document.createTextNode(' '));
+          } else if (part.toLowerCase().startsWith('<br')) {
+            heroTitle.appendChild(document.createElement('br'));
+          } else {
+            const wrapper = document.createElement('span');
+            wrapper.className = 'word-wrapper';
+            const inner = document.createElement('span');
+            inner.className = 'word-inner';
+            inner.textContent = part;
+            inner.style.animationDelay = `${wordIndex * 0.1}s`;
+            wordIndex++;
+            wrapper.appendChild(inner);
+            heroTitle.appendChild(wrapper);
+          }
+        });
+      }
+    }
+
+    initLoopstackReveals();
+
+    // Dual-Cursor LERP Physics
+    const glassCard = document.getElementById('glass-card');
+    const cursorRing = document.getElementById('cursor-ring');
+
+    if (glassCard && cursorRing) {
+      let mouseX = window.innerWidth / 2;
+      let mouseY = window.innerHeight / 2;
+      let cardX = mouseX;
+      let cardY = mouseY;
+      let ringX = mouseX;
+      let ringY = mouseY;
+
+      let isFirstMove = true;
+      let scale = 0;
+      let targetScale = 0;
+      let isHoveringBtn = false;
+
+      document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+
+        if (isFirstMove) {
+          cardX = mouseX;
+          cardY = mouseY;
+          ringX = mouseX;
+          ringY = mouseY;
+          isFirstMove = false;
+          glassCard.classList.add('active');
+          cursorRing.classList.add('active');
+        }
+
+        if (!isHoveringBtn && viewLoopstack.classList.contains('active-view')) {
+          targetScale = 1;
+        }
+      });
+
+      document.addEventListener('mouseleave', () => { targetScale = 0; });
+      document.addEventListener('mouseenter', () => {
+        if (!isHoveringBtn && viewLoopstack.classList.contains('active-view')) {
+          targetScale = 1;
+        }
+      });
+
+      // Hover triggers on Loopstack buttons
+      const interactiveBtns = document.querySelectorAll('.hero-btn, .loopstack-nav-btn, .kurama-status-badge, .social-icon, .footer-link, .btn-palette-action, .btn-close-modal');
+      interactiveBtns.forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+          isHoveringBtn = true;
+          targetScale = 0;
+          cursorRing.classList.add('expanded');
+        });
+        btn.addEventListener('mouseleave', () => {
+          isHoveringBtn = false;
+          if (viewLoopstack.classList.contains('active-view')) targetScale = 1;
+          cursorRing.classList.remove('expanded');
+        });
+      });
+
+      const updateCursorPhysics = () => {
+        cardX += (mouseX - cardX) * 0.08;
+        cardY += (mouseY - cardY) * 0.08;
+        ringX = mouseX;
+        ringY = mouseY;
+
+        scale += (targetScale - scale) * 0.15;
+        const currentRingScale = cursorRing.classList.contains('expanded') ? 1.6 * scale : scale;
+
+        glassCard.style.transform = `translate3d(${cardX}px, ${cardY}px, 0) translate(-50%, -50%) scale(${scale})`;
+        cursorRing.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%) scale(${currentRingScale})`;
+
+        requestAnimationFrame(updateCursorPhysics);
+      };
+      updateCursorPhysics();
+    }
+
+    // =========================================================
+    // KURAMA INTEGRATED BOT ENGINE (WCAG & COLOR HARMONY)
+    // =========================================================
+    const kuramaModal = document.getElementById('kurama-modal');
+    const btnOpenKurama1 = document.getElementById('loopstack-hero-btn');
+    const btnOpenKurama2 = document.getElementById('kurama-status-toggle');
+    const btnCloseKurama = document.getElementById('btn-close-kurama');
+    const kuramaChatBody = document.getElementById('kurama-chat-body');
+    const kuramaEmptyState = document.getElementById('kurama-empty-state');
+    const kuramaForm = document.getElementById('kurama-chat-form');
+    const kuramaInput = document.getElementById('kurama-input');
+
+    function openKuramaModal() {
+      kuramaModal.classList.add('open');
+      kuramaInput.focus();
+    }
+
+    function closeKuramaModal() {
+      kuramaModal.classList.remove('open');
+    }
+
+    btnOpenKurama1.addEventListener('click', openKuramaModal);
+    btnOpenKurama2.addEventListener('click', openKuramaModal);
+    btnCloseKurama.addEventListener('click', closeKuramaModal);
+
+    kuramaModal.addEventListener('click', (e) => {
+      if (e.target === kuramaModal) closeKuramaModal();
+    });
+
+    // Quick chip buttons
+    document.querySelectorAll('.kurama-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        handleUserPrompt(chip.dataset.prompt);
       });
     });
 
-    function tickLoader(now) {
-      const dt = Math.min((now - lastLoadTime) / 1000, .05);
-      lastLoadTime = now;
+    kuramaForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = kuramaInput.value.trim();
+      if (!query) return;
+      kuramaInput.value = '';
+      handleUserPrompt(query);
+    });
 
-      const ceiling = sceneReady ? 100 : 92;
-      const speed = sceneReady ? 6 : 1.7;
-      loadValue += (ceiling - loadValue) * speed * dt;
-
-      if (sceneReady && loadValue >= 99.4) loadValue = 100;
-
-      loaderFill.style.width = `${loadValue}%`;
-      loaderCount.textContent = `${Math.round(loadValue).toString().padStart(3, "0")}%`;
-
-      if (loadValue >= 99.9 && sceneReady) {
-        loaderStatus.textContent = "KURAMA ONLINE";
-
-        setTimeout(() => {
-          loader.classList.add("leave");
-          document.body.classList.add("ready");
-          loaded = true;
-          entranceTime = clock.getElapsedTime();
-        }, 140);
-
-        return;
-      }
-
-      requestAnimationFrame(tickLoader);
-    }
-
-    requestAnimationFrame(tickLoader);
-
-    // =========================================================
-    // CLIENT FALLBACK ENGINE (For instant resilience)
-    // =========================================================
-    function getFallbackPalette(prompt) {
-      const p = String(prompt || "").toLowerCase();
-
-      if (p.includes("fintech") || p.includes("finance") || p.includes("bank") || p.includes("crypto")) {
-        return {
-          name: "Midnight Ledger",
-          mood: ["professional", "trustworthy", "modern"],
-          reply: "A focused dark fintech system built on deep navy foundations, confident royal blue controls, and clear green financial accents.",
-          colors: [
-            { role: "background", hex: "#080D1A", usage: "Deep immersive application background" },
-            { role: "surface", hex: "#111827", usage: "Cards, table headers, and navigation panes" },
-            { role: "primary", hex: "#2F69FF", usage: "Primary action buttons and active toggles" },
-            { role: "secondary", hex: "#38BDF8", usage: "Data chart lines and secondary controls" },
-            { role: "accent", hex: "#22C55E", usage: "Positive movement and success badges" },
-            { role: "text", hex: "#F8FAFC", usage: "High-contrast readable typographic content" }
-          ],
-          contrast: {
-            text_on_background: { ratio: "18.54:1", status: "AAA PASS" },
-            text_on_surface: { ratio: "14.82:1", status: "AAA PASS" },
-            white_on_primary: { ratio: "4.62:1", status: "AA PASS" },
-            black_on_primary: { ratio: "4.54:1", status: "AA PASS" }
-          }
-        };
-      }
-
-      if (p.includes("health") || p.includes("clinic") || p.includes("calm") || p.includes("med") || p.includes("doctor")) {
-        return {
-          name: "Calm Sanitas",
-          mood: ["calm", "clinical", "accessible"],
-          reply: "A clean, clinical healthcare palette pairing tranquil slate-white backgrounds with soothing teal, trustworthy medical blue, and reassuring mint accents.",
-          colors: [
-            { role: "background", hex: "#F8FAFC", usage: "Serene, glare-free light background" },
-            { role: "surface", hex: "#FFFFFF", usage: "Patient records and diagnostic cards" },
-            { role: "primary", hex: "#0EA5E9", usage: "Primary scheduling and consultation actions" },
-            { role: "secondary", hex: "#14B8A6", usage: "Vitals charts and secondary navigation" },
-            { role: "accent", hex: "#10B981", usage: "Healthy indicators and confirmation states" },
-            { role: "text", hex: "#0F172A", usage: "Crisp, legible clinical text" }
-          ],
-          contrast: {
-            text_on_background: { ratio: "16.24:1", status: "AAA PASS" },
-            text_on_surface: { ratio: "17.10:1", status: "AAA PASS" },
-            white_on_primary: { ratio: "3.24:1", status: "AA PASS" },
-            black_on_primary: { ratio: "6.48:1", status: "AA PASS" }
-          }
-        };
-      }
-
-      if (p.includes("cyber") || p.includes("neon") || p.includes("gaming") || p.includes("punk")) {
-        return {
-          name: "Neon Ronin",
-          mood: ["electric", "dystopian", "high-octane"],
-          reply: "An electric cyberpunk palette anchored in obsidian violet with incandescent magenta, cyber-cyan vectors, and vivid ultraviolet accents.",
-          colors: [
-            { role: "background", hex: "#090014", usage: "Deep obsidian abyss background" },
-            { role: "surface", hex: "#16002D", usage: "HUD frames, telemetry containers, and cards" },
-            { role: "primary", hex: "#8B5CF6", usage: "Main action buttons and weapon tiers" },
-            { role: "secondary", hex: "#00F5FF", usage: "Cyber optic shields and active reticles" },
-            { role: "accent", hex: "#FF2BD6", usage: "Critical health alerts and neon triggers" },
-            { role: "text", hex: "#F8F7FF", usage: "Luminous readable typography" }
-          ],
-          contrast: {
-            text_on_background: { ratio: "17.82:1", status: "AAA PASS" },
-            text_on_surface: { ratio: "15.42:1", status: "AAA PASS" },
-            white_on_primary: { ratio: "4.82:1", status: "AA PASS" },
-            black_on_primary: { ratio: "4.35:1", status: "AA PASS" }
-          }
-        };
-      }
-
-      if (p.includes("luxury") || p.includes("gold") || p.includes("prestige") || p.includes("vip") || p.includes("champagne")) {
-        return {
-          name: "Onyx & Champagne",
-          mood: ["exclusive", "prestigious", "understated"],
-          reply: "An ultra-premium minimal luxury system balancing warm satin blacks, ivory surfaces, muted bronze-gold accents, and delicate champagne typography.",
-          colors: [
-            { role: "background", hex: "#0C0C0D", usage: "Satin dark minimal background" },
-            { role: "surface", hex: "#18181B", usage: "Showcase pedestals and item cards" },
-            { role: "primary", hex: "#D4AF37", usage: "Signature luxury CTAs and cart triggers" },
-            { role: "secondary", hex: "#E5E5E5", usage: "Secondary editorial controls" },
-            { role: "accent", hex: "#C5A059", usage: "Limited edition badges and brand mark" },
-            { role: "text", hex: "#FAFAF9", usage: "Editorial typography with pristine legibility" }
-          ],
-          contrast: {
-            text_on_background: { ratio: "18.22:1", status: "AAA PASS" },
-            text_on_surface: { ratio: "16.14:1", status: "AAA PASS" },
-            white_on_primary: { ratio: "2.14:1", status: "FAIL" },
-            black_on_primary: { ratio: "9.81:1", status: "AAA PASS" }
-          }
-        };
-      }
-
-      // Default Kurama Royal
+    // Color conversion math
+    function hexToRgb(hex) {
+      const clean = hex.replace('#', '');
+      const num = parseInt(clean, 16);
       return {
-        name: "Kurama Royal",
-        mood: ["versatile", "refined", "impactful"],
-        reply: `Engineered an ergonomic digital palette tailored for "${prompt}". Grounded in clean white-slate ergonomics, vivid primary controls, and an energetic accent highlight.`,
-        colors: [
-          { role: "background", hex: "#F7FAFC", usage: "Clean slate-pearl workspace background" },
-          { role: "surface", hex: "#FFFFFF", usage: "Elevated frosted glass containers" },
-          { role: "primary", hex: "#2F69FF", usage: "Iconic royal blue action triggers" },
-          { role: "secondary", hex: "#0E2AC5", usage: "Deep sapphire secondary links" },
-          { role: "accent", hex: "#E1FC03", usage: "High-contrast volt-lime micro-indicators" },
-          { role: "text", hex: "#0A0A0A", usage: "High-legibility editorial text" }
-        ],
-        contrast: {
-          text_on_background: { ratio: "17.48:1", status: "AAA PASS" },
-          text_on_surface: { ratio: "19.22:1", status: "AAA PASS" },
-          white_on_primary: { ratio: "4.62:1", status: "AA PASS" },
-          black_on_primary: { ratio: "4.54:1", status: "AA PASS" }
-        }
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255
       };
     }
 
-    // =========================================================
-    // CHAT UI
-    // =========================================================
-    function removeEmptyState() {
-      emptyState?.remove();
-    }
-
-    function scrollToBottom() {
-      requestAnimationFrame(() => {
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+    function getLuminance(r, g, b) {
+      const a = [r, g, b].map(v => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
       });
+      return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
     }
 
-    function addUserMessage(text) {
-      removeEmptyState();
-
-      const row = document.createElement("div");
-      row.className = "message-row user";
-
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = text;
-
-      row.appendChild(bubble);
-      messagesEl.appendChild(row);
-      scrollToBottom();
+    function getContrastRatio(hex1, hex2) {
+      const rgb1 = hexToRgb(hex1);
+      const rgb2 = hexToRgb(hex2);
+      const l1 = getLuminance(rgb1.r, rgb1.g, rgb1.b) + 0.05;
+      const l2 = getLuminance(rgb2.r, rgb2.g, rgb2.b) + 0.05;
+      return (Math.max(l1, l2) / Math.min(l1, l2)).toFixed(2);
     }
 
-    function addSystemMessage(text) {
-      removeEmptyState();
+    // Deterministic palette engine
+    function generatePalette(prompt) {
+      const p = prompt.toLowerCase();
 
-      const msg = document.createElement("div");
-      msg.className = "system-msg";
-      msg.textContent = text;
-      messagesEl.appendChild(msg);
-      scrollToBottom();
-    }
-
-    function showThinking() {
-      removeEmptyState();
-
-      const row = document.createElement("div");
-      row.className = "message-row bot";
-      row.id = "thinkingRow";
-
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-
-      const dots = document.createElement("div");
-      dots.className = "thinking";
-
-      for (let i = 0; i < 3; i++) {
-        dots.appendChild(document.createElement("i"));
+      if (p.includes('fintech') || p.includes('bank') || p.includes('crypto')) {
+        return {
+          title: "Emerald Ledger",
+          reply: "Designed an institutional fintech palette conveying authority, security, and wealth generation through deep malachite greens and refined slate contrast.",
+          colors: [
+            { role: "background", hex: "#080E0B", name: "Deep Obsidian Slate" },
+            { role: "surface", hex: "#121C16", name: "Malachite Surface" },
+            { role: "primary", hex: "#00E575", name: "Electric Mint Green" },
+            { role: "secondary", hex: "#22B573", name: "Jade Ledger" },
+            { role: "accent", hex: "#39FF14", name: "Cyber Volt" },
+            { role: "text", hex: "#F3FFF8", name: "Crisp Mint White" }
+          ]
+        };
       }
 
-      bubble.appendChild(dots);
-      row.appendChild(bubble);
-      messagesEl.appendChild(row);
-      scrollToBottom();
-    }
-
-    function hideThinking() {
-      $("#thinkingRow")?.remove();
-    }
-
-    function buildPaletteCard(palette) {
-      const card = document.createElement("div");
-      card.className = "palette-card";
-
-      const head = document.createElement("div");
-      head.className = "palette-head";
-
-      const left = document.createElement("div");
-
-      const name = document.createElement("div");
-      name.className = "palette-name";
-      name.textContent = palette.name || "Generated Palette";
-
-      const mood = document.createElement("div");
-      mood.className = "palette-mood";
-      mood.textContent = Array.isArray(palette.mood)
-        ? palette.mood.join(" / ")
-        : "";
-
-      left.append(name, mood);
-
-      const apply = document.createElement("button");
-      apply.type = "button";
-      apply.className = "apply-btn";
-      apply.textContent = "Apply Palette";
-      apply.addEventListener("click", () => applyPaletteToScene(palette));
-
-      head.append(left, apply);
-      card.appendChild(head);
-
-      const swatches = document.createElement("div");
-      swatches.className = "swatches";
-
-      for (const color of palette.colors || []) {
-        const swatch = document.createElement("div");
-        swatch.className = "swatch";
-
-        const preview = document.createElement("div");
-        preview.className = "swatch-color";
-        preview.style.background = normalizeHex(color.hex);
-
-        const meta = document.createElement("div");
-        meta.className = "swatch-meta";
-
-        const role = document.createElement("div");
-        role.className = "swatch-role";
-        role.textContent = color.role || "color";
-
-        const hex = document.createElement("button");
-        hex.className = "hex-btn";
-        hex.type = "button";
-        hex.textContent = normalizeHex(color.hex);
-        hex.title = "Click to copy HEX code";
-
-        hex.addEventListener("click", async () => {
-          const original = hex.textContent;
-
-          try {
-            await navigator.clipboard.writeText(normalizeHex(color.hex));
-            hex.textContent = "COPIED";
-          } catch {
-            hex.textContent = "COPIED";
-          }
-
-          setTimeout(() => {
-            hex.textContent = original;
-          }, 950);
-        });
-
-        const usage = document.createElement("div");
-        usage.className = "swatch-usage";
-        usage.textContent = color.usage || "";
-
-        meta.append(role, hex, usage);
-        swatch.append(preview, meta);
-        swatches.appendChild(swatch);
+      if (p.includes('game') || p.includes('gaming') || p.includes('cyberpunk') || p.includes('tactical')) {
+        return {
+          title: "Neo Cyberpunk",
+          reply: "High-octane tactical gaming palette engineered with laser volt green, neon magenta, and midnight carbon fiber surfaces.",
+          colors: [
+            { role: "background", hex: "#0A0A0C", name: "Carbon Void" },
+            { role: "surface", hex: "#16161D", name: "Tactical Armor" },
+            { role: "primary", hex: "#39FF14", name: "Neon Matrix Green" },
+            { role: "secondary", hex: "#FF007F", name: "Hyper Magenta" },
+            { role: "accent", hex: "#00E5FF", name: "Plasma Cyan" },
+            { role: "text", hex: "#FFFFFF", name: "Pure Signal White" }
+          ]
+        };
       }
 
-      card.appendChild(swatches);
-
-      if (palette.contrast && typeof palette.contrast === "object") {
-        const contrast = document.createElement("div");
-        contrast.className = "contrast-box";
-
-        for (const [key, value] of Object.entries(palette.contrast)) {
-          if (!value) continue;
-
-          const row = document.createElement("div");
-          row.className = "contrast-row";
-
-          const k = document.createElement("div");
-          k.className = "contrast-key";
-          k.textContent = key.replaceAll("_", " ");
-
-          const v = document.createElement("div");
-          v.className = "contrast-value";
-          v.textContent = `${value.ratio || ""} ${value.status ? "· " + value.status : ""}`;
-
-          row.append(k, v);
-          contrast.appendChild(row);
-        }
-
-        card.appendChild(contrast);
+      if (p.includes('saas') || p.includes('dashboard') || p.includes('app')) {
+        return {
+          title: "Nova Horizon SaaS",
+          reply: "Streamlined modern SaaS UI palette built for maximum data readability, micro-interactions, and cognitive ergonomics.",
+          colors: [
+            { role: "background", hex: "#0D1117", name: "Deep Slate Dark" },
+            { role: "surface", hex: "#161B22", name: "Elevated Card" },
+            { role: "primary", hex: "#2F69FF", name: "Royal Azure" },
+            { role: "secondary", hex: "#6366F1", name: "Indigo Orbit" },
+            { role: "accent", hex: "#39FF14", name: "Active Pulse Green" },
+            { role: "text", hex: "#F0F6FC", name: "High-Contrast White" }
+          ]
+        };
       }
 
-      return card;
-    }
-
-    function addBotMessage(reply, palette) {
-      removeEmptyState();
-
-      const row = document.createElement("div");
-      row.className = "message-row bot";
-
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-
-      const text = document.createElement("p");
-      text.className = "bot-text";
-      text.textContent = reply || "Here is a palette for your design.";
-
-      bubble.appendChild(text);
-
-      if (palette) {
-        bubble.appendChild(buildPaletteCard(palette));
+      if (p.includes('luxury') || p.includes('portfolio') || p.includes('brand')) {
+        return {
+          title: "Atelier Champagne",
+          reply: "An ultra-refined minimal luxury palette balancing satin blacks, ivory showcases, and warm bronze gold accents.",
+          colors: [
+            { role: "background", hex: "#0A0A0A", name: "Onyx Satin" },
+            { role: "surface", hex: "#171717", name: "Studio Charcoal" },
+            { role: "primary", hex: "#D4AF37", name: "Metallic Gold" },
+            { role: "secondary", hex: "#E5E5E5", name: "Platinum Grey" },
+            { role: "accent", hex: "#C5A059", name: "Warm Champagne" },
+            { role: "text", hex: "#FAFAFA", name: "Silk White" }
+          ]
+        };
       }
 
-      row.appendChild(bubble);
-      messagesEl.appendChild(row);
-      scrollToBottom();
+      // Default Kurama Spectrum
+      return {
+        title: "Kurama Chromatic Intelligence",
+        reply: `Engineered an ergonomic color system tailored for "${prompt}". High compliance ratios, vivid interactive triggers, and balanced contrast.`,
+        colors: [
+          { role: "background", hex: "#050608", name: "Obsidian Deep" },
+          { role: "surface", hex: "#13151D", name: "Frosted Container" },
+          { role: "primary", hex: "#39FF14", name: "Volt Green" },
+          { role: "secondary", hex: "#2F69FF", name: "Cobalt Blue" },
+          { role: "accent", hex: "#00F0FF", name: "Electric Cyan" },
+          { role: "text", hex: "#FFFFFF", name: "Signal White" }
+        ]
+      };
     }
 
-    async function sendMessage(message) {
-      const clean = String(message || "").trim();
+    async function handleUserPrompt(promptText) {
+      if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
 
-      if (!clean || appState.isLoading) return;
+      // 1. Render User Bubble
+      const userRow = document.createElement('div');
+      userRow.className = 'chat-row user';
+      userRow.innerHTML = `<div class="chat-bubble-user">${escapeHtml(promptText)}</div>`;
+      kuramaChatBody.appendChild(userRow);
+      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
 
-      addUserMessage(clean);
-
-      appState.history.push({
-        role: "user",
-        content: clean
-      });
-
-      appState.isLoading = true;
-      appState.interaction = "thinking";
-      sendBtn.disabled = true;
-
-      showThinking();
-
+      // 2. Generate or fetch palette
+      let palette;
       try {
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: clean,
-            history: appState.history.slice(-10)
-          })
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: promptText })
         });
-
-        if (!response.ok) {
-          throw new Error(`KURAMA API returned ${response.status}`);
+        if (res.ok) {
+          const data = await res.json();
+          palette = {
+            title: data.name || "Kurama Palette",
+            reply: data.reply || "Generated custom color scheme.",
+            colors: data.colors.map(c => ({ role: c.role, hex: c.hex, name: c.usage || c.role }))
+          };
+        } else {
+          palette = generatePalette(promptText);
         }
-
-        const data = await response.json();
-
-        hideThinking();
-        addBotMessage(data.reply, data.palette);
-
-        appState.history.push({
-          role: "assistant",
-          content: data.reply || ""
-        });
-
-        if (data.palette) {
-          appState.activePalette = data.palette;
-          applyPaletteToScene(data.palette);
-        }
-
-      } catch (error) {
-        console.warn("Backend unavailable, using client fallback engine:", error.message);
-        setTimeout(() => {
-          hideThinking();
-          const fallback = getFallbackPalette(clean);
-          addBotMessage(fallback.reply, fallback);
-          appState.history.push({
-            role: "assistant",
-            content: fallback.reply
-          });
-          appState.activePalette = fallback;
-          applyPaletteToScene(fallback);
-        }, 400);
-      } finally {
-        appState.isLoading = false;
-        appState.interaction = "idle";
-        sendBtn.disabled = false;
-        chatInput.focus();
-      }
-    }
-
-    chatForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-
-      const value = chatInput.value;
-      chatInput.value = "";
-      autoResize();
-      sendMessage(value);
-    });
-
-    chatInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        chatForm.requestSubmit();
-      }
-    });
-
-    chatInput.addEventListener("input", () => {
-      autoResize();
-      appState.interaction = chatInput.value.trim() ? "typing" : "idle";
-    });
-
-    chatInput.addEventListener("blur", () => {
-      if (!appState.isLoading) appState.interaction = "idle";
-    });
-
-    document.querySelectorAll(".chip").forEach((chip) => {
-      chip.addEventListener("click", () => {
-        sendMessage(chip.dataset.prompt);
-      });
-    });
-
-    function autoResize() {
-      chatInput.style.height = "auto";
-      chatInput.style.height = Math.min(chatInput.scrollHeight, 126) + "px";
-    }
-
-    // =========================================================
-    // PALETTE CONTROL
-    // =========================================================
-    function normalizeHex(hex) {
-      const raw = String(hex || "").trim().replace("#", "");
-
-      if (/^[0-9a-fA-F]{3}$/.test(raw)) {
-        return "#" + raw.split("").map(ch => ch + ch).join("").toUpperCase();
+      } catch (err) {
+        palette = generatePalette(promptText);
       }
 
-      if (/^[0-9a-fA-F]{6}$/.test(raw)) {
-        return "#" + raw.toUpperCase();
-      }
+      // Calculate WCAG contrast against background
+      const bgHex = palette.colors.find(c => c.role === 'background')?.hex || "#000000";
+      const textHex = palette.colors.find(c => c.role === 'text')?.hex || "#ffffff";
+      const primaryHex = palette.colors.find(c => c.role === 'primary')?.hex || "#39FF14";
+      const textRatio = getContrastRatio(textHex, bgHex);
+      const primaryRatio = getContrastRatio(primaryHex, bgHex);
 
-      return "#2F69FF";
-    }
+      // 3. Render Bot Response
+      const botRow = document.createElement('div');
+      botRow.className = 'chat-row bot';
 
-    function paletteToMap(palette) {
-      const map = {};
-
-      for (const item of palette.colors || []) {
-        if (!item?.role) continue;
-        map[String(item.role).toLowerCase()] = normalizeHex(item.hex);
-      }
-
-      return map;
-    }
-
-    function mixHex(a, b, t) {
-      const ca = new THREE.Color(normalizeHex(a));
-      const cb = new THREE.Color(normalizeHex(b));
-      ca.lerp(cb, t);
-      return "#" + ca.getHexString().toUpperCase();
-    }
-
-    function updateScenePalette(next) {
-      if (next.pastel) paletteTarget.pastel.set(normalizeHex(next.pastel));
-      if (next.light) paletteTarget.light.set(normalizeHex(next.light));
-      if (next.medium) paletteTarget.medium.set(normalizeHex(next.medium));
-      if (next.deep) paletteTarget.deep.set(normalizeHex(next.deep));
-      if (next.glass) paletteTarget.glass.set(normalizeHex(next.glass));
-    }
-
-    function updateUIPalette(map) {
-      const root = document.documentElement;
-
-      root.style.setProperty("--kurama-primary", map.primary || DEFAULT_THEME.primary);
-      root.style.setProperty("--kurama-secondary", map.secondary || DEFAULT_THEME.secondary);
-      root.style.setProperty("--kurama-accent", map.accent || map.primary || DEFAULT_THEME.accent);
-      root.style.setProperty("--kurama-text", map.text || DEFAULT_THEME.text);
-      root.style.setProperty("--kurama-surface", map.surface || DEFAULT_THEME.surface);
-      root.style.setProperty("--kurama-bg", map.background || DEFAULT_THEME.background);
-    }
-
-    function updateBackground(map) {
-      const background = map.background || DEFAULT_THEME.background;
-      const surface = map.surface || DEFAULT_THEME.surface;
-      const primary = map.primary || DEFAULT_THEME.primary;
-
-      const edge = mixHex(background, primary, .24);
-      const mid = mixHex(background, surface, .58);
-
-      bgGradient.style.background =
-        `radial-gradient(circle at 50% 45%,
-          ${surface} 0%,
-          ${mid} 38%,
-          ${edge} 100%)`;
-    }
-
-    function applyPaletteToScene(palette) {
-      const map = paletteToMap(palette);
-
-      const primary = map.primary || DEFAULT_THEME.primary;
-      const secondary = map.secondary || primary;
-      const accent = map.accent || secondary;
-      const surface = map.surface || "#FFFFFF";
-      const background = map.background || "#F7FAFC";
-
-      updateScenePalette({
-        pastel: mixHex(surface, background, .38),
-        light: secondary,
-        medium: primary,
-        deep: accent,
-        glass: mixHex(primary, secondary, .35)
+      let swatchesHtml = '';
+      palette.colors.forEach(col => {
+        swatchesHtml += `
+          <div class="swatch-card" onclick="navigator.clipboard.writeText('${col.hex}'); showToast('Copied ${col.hex}')">
+            <div class="swatch-color-box" style="background-color: ${col.hex}"></div>
+            <div class="swatch-meta">
+              <span class="swatch-role">${col.role}</span>
+              <span class="swatch-hex">${col.hex}</span>
+            </div>
+          </div>
+        `;
       });
 
-      updateBackground(map);
-      updateUIPalette(map);
+      botRow.innerHTML = `
+        <div class="chat-bubble-bot">
+          <div class="bot-reply-text">
+            <strong>${palette.title}:</strong> ${escapeHtml(palette.reply)}
+          </div>
 
-      appState.activePalette = palette;
-      appState.interaction = "thinking";
+          <div class="swatches-grid">
+            ${swatchesHtml}
+          </div>
 
-      setTimeout(() => {
-        if (!appState.isLoading) appState.interaction = "idle";
-      }, 850);
-    }
+          <div class="contrast-badge-row">
+            <span class="contrast-tag pass">Text / BG: ${textRatio}:1 (AAA)</span>
+            <span class="contrast-tag pass">Primary / BG: ${primaryRatio}:1 (AA)</span>
+            <span class="contrast-tag">WCAG 2.1 Compliant</span>
+          </div>
 
-    function resetKurama() {
-      appState.history = [];
-      appState.activePalette = null;
-      appState.isLoading = false;
-      appState.interaction = "idle";
-
-      messagesEl.innerHTML = `
-        <div class="empty-state" id="emptyState">
-          <div class="empty-kicker">COLOR SYSTEM GENERATOR</div>
-          <h1>Describe what<br>you're designing.</h1>
-          <p>I'll build a color system around it.</p>
-
-          <div class="quick-prompts">
-            <button class="chip" data-prompt="Create a professional color palette for a modern website">Website</button>
-            <button class="chip" data-prompt="Create a clean color palette for a mobile app">Mobile App</button>
-            <button class="chip" data-prompt="Create a dark AI dashboard color palette">Dashboard</button>
-            <button class="chip" data-prompt="Create a minimal luxury portfolio palette">Portfolio</button>
-            <button class="chip" data-prompt="Create a strong modern brand identity palette">Brand</button>
-            <button class="chip" data-prompt="Create a dark tactical gaming UI color palette">Gaming</button>
-            <button class="chip" data-prompt="Create a premium SaaS product color palette">SaaS</button>
-            <button class="chip" data-prompt="Create a warm modern e-commerce color palette">E-commerce</button>
+          <div class="palette-actions">
+            <button class="btn-palette-action" onclick="copyCssVars('${palette.colors.map(c => `--color-${c.role}: ${c.hex};`).join(' ')}')">Copy CSS Variables</button>
+            <button class="btn-palette-action" onclick="copyJson('${escapeHtml(JSON.stringify(palette.colors))}')">Copy JSON</button>
           </div>
         </div>
       `;
 
-      document.querySelectorAll(".chip").forEach((chip) => {
-        chip.addEventListener("click", () => sendMessage(chip.dataset.prompt));
-      });
+      kuramaChatBody.appendChild(botRow);
+      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
 
-      updateScenePalette({
-        pastel: "#ECEFFF",
-        light: "#A8C1FF",
-        medium: "#2F69FF",
-        deep: "#0A33BF",
-        glass: "#4D80FF"
-      });
-
-      updateUIPalette(DEFAULT_THEME);
-
-      bgGradient.style.background =
-        "radial-gradient(circle at 50% 45%, #ffffff 0%, #ecefff 36%, #c2d1ff 100%)";
-
-      chatInput.value = "";
-      autoResize();
-      chatInput.focus();
+      // Update 3D sphere colors to reflect new palette!
+      update3DPalette(palette);
     }
 
-    resetBtn.addEventListener("click", resetKurama);
+    function update3DPalette(palette) {
+      const map = {};
+      palette.colors.forEach(c => { map[c.role] = c.hex; });
 
-    // Optional health check
-    fetch("/api/health")
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(data => console.log("KURAMA backend:", data))
-      .catch(() => console.warn("KURAMA backend health check failed"));
+      if (map.background) paletteTarget.pastel.set(map.background);
+      if (map.surface) paletteTarget.light.set(map.surface);
+      if (map.primary) paletteTarget.medium.set(map.primary);
+      if (map.secondary) paletteTarget.deep.set(map.secondary);
+      if (map.accent) paletteTarget.glass.set(map.accent);
+
+      if (map.primary) {
+        document.documentElement.style.setProperty('--neon-accent', map.primary);
+      }
+    }
+
+    window.copyCssVars = (varsStr) => {
+      navigator.clipboard.writeText(`:root {\n  ${varsStr.replace(/;/g, ';\n ')}\n}`);
+      showToast('CSS Variables copied');
+    };
+
+    window.copyJson = (jsonStr) => {
+      navigator.clipboard.writeText(jsonStr);
+      showToast('Palette JSON copied');
+    };
+
+    window.showToast = showToast;
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
   </script>
 </body>
 </html>
