@@ -1976,11 +1976,8 @@
       if (e.target === kuramaModal) closeKuramaModal();
     });
 
-    // Auto-open chat if ?chat=open or ?chat=true is in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('chat') === 'open' || urlParams.get('chat') === 'true') {
-      setTimeout(openKuramaModal, 300);
-    }
+    // Open chat modal immediately on chat.html
+    setTimeout(openKuramaModal, 150);
 
     // Quick chip buttons
     document.querySelectorAll('.kurama-chip').forEach(chip => {

@@ -1364,13 +1364,24 @@
 
     <!-- Loopstack Top Bar -->
     <header class="loopstack-nav">
-      <button id="btn-back-to-canvas" class="loopstack-nav-btn" aria-label="Back to 3D Field">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12"></line>
-          <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        <span>3D Canvas</span>
-      </button>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button id="btn-back-to-canvas" class="loopstack-nav-btn" aria-label="Back to 3D Field">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>3D Canvas</span>
+        </button>
+
+        <a href="overview.html" class="loopstack-nav-btn" aria-label="Open 3D Earth Overview" style="text-decoration: none; color: #ffffff;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5df0a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M2 12h20"></path>
+            <path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"></path>
+          </svg>
+          <span style="color: #ffffff;">3D Earth Overview</span>
+        </a>
+      </div>
 
       <button id="kurama-status-toggle" class="kurama-status-badge" aria-label="Open Kurama AI Chat">
         <span class="badge-dot"></span>
@@ -1964,6 +1975,12 @@
     kuramaModal.addEventListener('click', (e) => {
       if (e.target === kuramaModal) closeKuramaModal();
     });
+
+    // Auto-open chat if ?chat=open or ?chat=true is in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('chat') === 'open' || urlParams.get('chat') === 'true') {
+      setTimeout(openKuramaModal, 300);
+    }
 
     // Quick chip buttons
     document.querySelectorAll('.kurama-chip').forEach(chip => {
