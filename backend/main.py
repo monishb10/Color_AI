@@ -103,17 +103,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 ROOT_INDEX = BASE_DIR / "index.html"
 
-# If frontend/index.html exists, serve it
-if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
-
-    @app.get("/")
-    async def serve_root():
+@app.get("/")
+async def serve_root():
+    if (BASE_DIR / "index.html").exists():
+        return FileResponse(BASE_DIR / "index.html")
+    elif (FRONTEND_DIR / "index.html").exists():
         return FileResponse(FRONTEND_DIR / "index.html")
-elif ROOT_INDEX.exists():
-    @app.get("/")
-    async def serve_root():
-        return FileResponse(ROOT_INDEX)
+    raise HTTPException(status_code=404, detail="index.html not found")
+
+@app.get("/{filename}.html")
+async def serve_html_file(filename: str):
+    target = BASE_DIR / f"{filename}.html"
+    if target.exists() and target.is_file():
+        return FileResponse(target)
+    target_fe = FRONTEND_DIR / f"{filename}.html"
+    if target_fe.exists() and target_fe.is_file():
+        return FileResponse(target_fe)
+    raise HTTPException(status_code=404, detail=f"{filename}.html not found")
 
 if __name__ == "__main__":
     import uvicorn
