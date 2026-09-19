@@ -1,22 +1,22 @@
 # Color_AI
 
-> **Jerryy'S AI** — Next-Generation AI Color Suggestion Chatbot & Interactive 3D WebGL Palette Studio.
+> **Jerryy's AI** — Autonomous AI Exam Preparation Model & Interactive 3D WebGL Studio.
 
-![Jerryy'S AI Color AI](frontend/index.html)
+![Jerryy's AI](frontend/index.html)
 
 ---
 
 ## 🎨 Overview
 
-**Color_AI (Jerryy'S AI)** is an intelligent color curation assistant combined with an interactive real-time WebGL physics engine. Jerryy'S AI helps designers, developers, and product creators discover tailored color palettes for websites, mobile apps, SaaS dashboards, gaming interfaces, brand identities, and e-commerce platforms.
+**Jerryy's AI** is an intelligent model purpose-built for comprehensive exam preparation, syllabus mastery, and problem solving combined with an interactive real-time WebGL physics engine. Jerryy's AI helps students and educators deconstruct complex curricula, master high-yield topics, and test conceptual retention.
 
-As you converse with Jerryy'S AI, the background 3D gravity field of 96 glass and matte spheres dynamically morphs and fluidly interpolates to reflect your new palette in real-time.
+As you explore Jerryy's AI, the background 3D gravity field of 96 glass and matte spheres dynamically morphs and fluidly interpolates in real-time.
 
 ---
 
 ## ✨ Features
 
-- 🤖 **Jerryy'S AI Color Engine**:
+- 🤖 **Jerryy's AI Exam Preparation Model**:
   - Contextual domain intelligence (Fintech, Cyberpunk, Healthcare, Luxury, Gaming, SaaS, E-Commerce, Nature, Minimalist).
   - Exact HEX matching with algorithmic color harmonies (Monochromatic, Analogous, Complementary, Triadic, Split-Complementary).
   - Dynamic palette generator: Primary, Secondary, Accent, Neutral Background, Surface Card, and High-Contrast Text colors.
@@ -50,7 +50,7 @@ python -m http.server 3000
 npx serve .
 ```
 
-Visit `http://localhost:3000` to interact with Jerryy'S AI and the 3D physics engine.
+Visit `http://localhost:8000` to interact with Jerryy's AI and the 3D physics engine.
 
 ---
 
@@ -80,7 +80,7 @@ The API will be available at:
 
 ```text
 Color_AI/
-├── index.html              # Standalone single-file frontend with Three.js & Jerryy'S AI UI
+├── index.html              # Standalone single-file frontend with Three.js & Jerryy's AI UI
 ├── frontend/
 │   └── index.html          # Frontend app source
 ├── backend/

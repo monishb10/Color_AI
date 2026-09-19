@@ -1,6 +1,6 @@
-# Jerryy'S AI — Backend Engine
+# Jerryy's AI — Backend Engine
 
-FastAPI backend providing color intelligence, palette generation, and WCAG accessibility evaluation for **Jerryy'S AI**.
+FastAPI backend providing curriculum intelligence, reasoning, and color synthesis for **Jerryy's AI Exam Preparation Model**.
 
 ## Setup & Running
 

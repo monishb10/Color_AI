@@ -1,5 +1,5 @@
 """
-Jerryy'S AI Color Engine
+Jerryy's AI Color Engine
 Deterministic color harmonization, archetype recognition,
 HEX-based palette synthesis, and WCAG contrast validation.
 """
@@ -396,7 +396,7 @@ def process_color_query(prompt: str) -> Dict[str, Any]:
             }
         }
 
-    # Default fallback: Royal Studio (Jerryy'S AI signature)
+    # Default fallback: Royal Studio (Jerryy's AI signature)
     default_colors = [
         {"role": "background", "hex": "#F7FAFC", "usage": "Clean white-slate canvas"},
         {"role": "surface", "hex": "#FFFFFF", "usage": "Elevated frosted glass panels and cards"},
@@ -408,7 +408,7 @@ def process_color_query(prompt: str) -> Dict[str, Any]:
     return {
         "reply": f"Built a versatile digital system for '{prompt}'. Grounded in clean white-slate ergonomics, vivid primary controls, and an energetic accent highlight.",
         "palette": {
-            "name": "Jerryy'S AI Royal",
+            "name": "Jerryy's AI Royal",
             "mood": ["versatile", "refined", "impactful"],
             "colors": default_colors,
             "contrast": calculate_palette_contrast(default_colors)

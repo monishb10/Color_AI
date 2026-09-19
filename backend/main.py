@@ -1,6 +1,6 @@
 """
-Jerryy'S AI FastAPI Backend
-Serves color intelligence API and static frontend assets.
+Jerryy's AI FastAPI Backend
+Serves exam preparation intelligence API and static frontend assets.
 """
 
 import os
@@ -22,8 +22,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("jerryys_ai")
 
 app = FastAPI(
-    title="Jerryy'S AI — Color Intelligence API",
-    description="Intelligent color generation and palette synthesis engine",
+    title="Jerryy's AI — Exam Preparation Model API",
+    description="Intelligent exam preparation and curriculum reasoning engine",
     version="1.0.0"
 )
 
@@ -65,8 +65,8 @@ class ChatResponse(BaseModel):
 async def health_check():
     return {
         "status": "ok",
-        "service": "Jerryy'S AI",
-        "engine": "AI Color Intelligence",
+        "service": "Jerryy's AI",
+        "engine": "AI Exam Preparation Model (Training in Progress)",
         "version": "1.0.0"
     }
 
