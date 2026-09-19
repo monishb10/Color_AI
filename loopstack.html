@@ -1035,109 +1035,181 @@
       color: rgba(255, 255, 255, 0.88);
     }
 
-    /* Swatches Grid */
-    .swatches-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-      gap: 10px;
-      width: 100%;
-    }
-
-    .swatch-card {
-      border-radius: 14px;
-      overflow: hidden;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      cursor: pointer;
-      transition: all 0.25s var(--ease-smooth);
-    }
-
-    .swatch-card:hover {
-      transform: translateY(-3px);
-      border-color: #39FF14;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    .swatch-color-box {
-      height: 64px;
-      width: 100%;
-      position: relative;
-    }
-
-    .swatch-meta {
-      padding: 8px 10px;
+    /* Mode / Profile Selector Bar */
+    .profile-selector-container {
       display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .swatch-role {
-      font-family: var(--font-general);
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    .swatch-hex {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-    /* Contrast Audit Card */
-    .contrast-badge-row {
-      display: flex;
-      flex-wrap: wrap;
+      align-items: center;
       gap: 8px;
-      padding-top: 6px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(12, 14, 20, 0.7);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .profile-selector-container::-webkit-scrollbar {
+      display: none;
     }
 
-    .contrast-tag {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-      display: inline-flex;
+    .profile-selector-label {
+      font-family: var(--font-general);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.45);
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+
+    .profile-selector {
+      display: flex;
       align-items: center;
       gap: 6px;
     }
 
-    .contrast-tag.pass {
-      color: #39FF14;
-      border-color: rgba(57, 255, 20, 0.3);
-      background: rgba(57, 255, 20, 0.08);
-    }
-
-    /* Actions row (Copy CSS / JSON) */
-    .palette-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .btn-palette-action {
-      font-family: var(--font-outfit);
-      font-size: 11px;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.7);
-      background: rgba(255, 255, 255, 0.06);
+    .profile-pill {
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 6px 12px;
-      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.75);
+      padding: 5px 13px;
+      border-radius: 999px;
+      font-family: var(--font-outfit);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s var(--ease-smooth);
+    }
+
+    .profile-pill:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .profile-pill.active {
+      background: rgba(57, 255, 20, 0.14);
+      border-color: #39FF14;
+      color: #39FF14;
+      box-shadow: 0 0 12px rgba(57, 255, 20, 0.18);
+    }
+
+    .btn-new-chat {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      font-family: var(--font-outfit);
+      font-size: 0.8rem;
+      font-weight: 500;
       cursor: pointer;
       transition: all 0.2s var(--ease-smooth);
     }
 
-    .btn-palette-action:hover {
-      background: rgba(255, 255, 255, 0.15);
-      color: #ffffff;
+    .btn-new-chat:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    /* Thinking indicator */
+    .thinking-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 18px;
+      background: rgba(20, 22, 30, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px 18px 18px 4px;
+      color: rgba(255, 255, 255, 0.7);
+      font-family: var(--font-outfit);
+      font-size: 0.9rem;
+    }
+
+    .thinking-dots {
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .thinking-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #39FF14;
+      animation: thinking-bounce 1.4s infinite ease-in-out both;
+    }
+
+    .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+    .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes thinking-bounce {
+      0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Safe Message typography & code blocks */
+    .bot-message-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font-general);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #39FF14;
+    }
+
+    .bot-reply-text {
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: rgba(255, 255, 255, 0.92);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .bot-reply-text code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #79ffa2;
+    }
+
+    .bot-reply-text pre {
+      background: rgba(10, 12, 18, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 12px 16px;
+      overflow-x: auto;
+      margin: 8px 0;
+      white-space: pre;
+    }
+
+    .bot-reply-text pre code {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: #f0f6fc;
+      font-size: 0.9em;
+    }
+
+    .error-bubble {
+      max-width: 90%;
+      background: rgba(255, 59, 48, 0.12);
+      border: 1px solid rgba(255, 59, 48, 0.35);
+      color: #ff8585;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-family: var(--font-outfit);
+      font-size: 0.92rem;
+      line-height: 1.5;
     }
 
     /* Chat Input Bar */
@@ -1170,6 +1242,11 @@
       color: #ffffff;
       font-family: var(--font-outfit);
       font-size: 0.95rem;
+      resize: none;
+      max-height: 120px;
+      line-height: 1.5;
+      padding: 6px 0;
+      outline: none;
     }
 
     .kurama-text-input::placeholder {
@@ -1468,10 +1545,17 @@
             <div class="kurama-mini-orb"></div>
             <div>
               <div class="kurama-title-text">Jerryy's AI</div>
-              <div class="kurama-sub-text">AI Exam Preparation Model</div>
+              <div class="kurama-sub-text">LOCAL LEARNING MODEL</div>
             </div>
           </div>
           <div class="modal-header-actions">
+            <button id="btn-new-chat" class="btn-new-chat" title="Start a New Conversation" aria-label="New Chat">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>New Chat</span>
+            </button>
             <a href="overview.html" class="modal-overview-link" title="Open Platform Overview">
               <span>Overview</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1479,30 +1563,40 @@
                 <polyline points="7 7 17 7 17 17"></polyline>
               </svg>
             </a>
-            <div class="canvas-status" style="background: rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.3); color: #39FF14;">
+            <div id="ollama-status-badge" class="canvas-status" style="background: rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.3); color: #39FF14;">
               <span class="badge-dot" style="background:#39FF14; box-shadow: 0 0 10px #39FF14; width:6px; height:6px; border-radius:50%;"></span>
-              <span>UNDERGOING TRAINING</span>
+              <span id="ollama-status-text">OLLAMA ONLINE</span>
             </div>
             <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Jerryy's AI Dialog">×</button>
+          </div>
+        </div>
+
+        <!-- Mode / Profile Selector Bar -->
+        <div class="profile-selector-container">
+          <span class="profile-selector-label">Mode:</span>
+          <div class="profile-selector" id="profile-selector">
+            <button type="button" class="profile-pill active" data-profile="default">General</button>
+            <button type="button" class="profile-pill" data-profile="exam">Exam Prep</button>
+            <button type="button" class="profile-pill" data-profile="dbms">DBMS</button>
+            <button type="button" class="profile-pill" data-profile="programming">Programming</button>
+            <button type="button" class="profile-pill" data-profile="study_support">Study Support</button>
           </div>
         </div>
 
         <!-- Chat Body -->
         <div class="kurama-modal-body" id="kurama-chat-body">
           <div class="kurama-empty-state" id="kurama-empty-state">
-            <div class="kurama-empty-tag">EXAM INTELLIGENCE ARCHITECTURE</div>
-            <h2 class="kurama-empty-title">Jerryy's AI Exam Preparation Model</h2>
-            <p class="kurama-empty-sub">This model is engineered for rigorous exam preparation, problem-solving, and concept mastery. Model training is actively in progress &mdash; select a module or enter a syllabus question to test its reasoning capabilities.</p>
+            <div class="kurama-empty-tag">LOCAL LEARNING MODEL</div>
+            <h2 class="kurama-empty-title">What do you want to learn?</h2>
+            <p class="kurama-empty-sub">Ask a question, prepare for an exam, practise coding, revise a topic, or test your understanding.</p>
 
             <div class="kurama-chips-grid">
-              <button class="kurama-chip" data-prompt="Explain high-yield concepts for Calculus & Linear Algebra exam preparation">Mathematics</button>
-              <button class="kurama-chip" data-prompt="Provide a revision outline and problem-solving strategy for Physics">Physics</button>
-              <button class="kurama-chip" data-prompt="Formulate core questions on Data Structures & Algorithms for exams">Computer Science</button>
-              <button class="kurama-chip" data-prompt="Summarize Organic Chemistry mechanisms and key exam formulas">Chemistry</button>
-              <button class="kurama-chip" data-prompt="Outline high-probability exam topics and mnemonics for Biology">Biology</button>
-              <button class="kurama-chip" data-prompt="Analyze logical deduction and quantitative aptitude methods">Reasoning & Aptitude</button>
-              <button class="kurama-chip" data-prompt="Create a high-impact 30-day exam preparation schedule">Study Strategy</button>
-              <button class="kurama-chip" data-prompt="Give me a timed conceptual mock exam question to solve">Mock Assessment</button>
+              <button type="button" class="kurama-chip" data-prompt="Teach me this topic step by step using a realistic example.">Learn</button>
+              <button type="button" class="kurama-chip" data-prompt="Help me prepare this topic for my exam.">Exam Prep</button>
+              <button type="button" class="kurama-chip" data-prompt="Quiz me one question at a time.">Quiz Me</button>
+              <button type="button" class="kurama-chip" data-prompt="Give me a quick revision of this topic.">Revision</button>
+              <button type="button" class="kurama-chip" data-prompt="Help me solve and understand this programming problem.">Programming</button>
+              <button type="button" class="kurama-chip" data-prompt="Explain this in very simple English with one realistic example.">Explain Simply</button>
             </div>
           </div>
         </div>
@@ -1510,7 +1604,7 @@
         <!-- Chat Input Footer -->
         <div class="kurama-modal-footer">
           <form class="kurama-input-form" id="kurama-chat-form">
-            <input type="text" id="kurama-input" class="kurama-text-input" placeholder="Ask about exam subjects, revision concepts, or problem-solving (Model in training)..." autocomplete="off">
+            <textarea id="kurama-input" class="kurama-text-input" rows="1" placeholder="Ask Jerryy's AI anything..."></textarea>
             <button type="submit" class="btn-send-prompt" aria-label="Send prompt">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1946,20 +2040,25 @@
     }
 
     // =========================================================
-    // JERRYY'S AI INTEGRATED BOT ENGINE (WCAG & COLOR HARMONY)
+    // JERRYY'S AI LOCAL LEARNING & EXAM PREPARATION ENGINE
     // =========================================================
     const kuramaModal = document.getElementById('kurama-modal');
     const btnOpenKurama1 = document.getElementById('loopstack-hero-btn');
     const btnOpenKurama2 = document.getElementById('kurama-status-toggle');
     const btnCloseKurama = document.getElementById('btn-close-kurama');
+    const btnNewChat = document.getElementById('btn-new-chat');
     const kuramaChatBody = document.getElementById('kurama-chat-body');
     const kuramaEmptyState = document.getElementById('kurama-empty-state');
     const kuramaForm = document.getElementById('kurama-chat-form');
     const kuramaInput = document.getElementById('kurama-input');
 
+    let chatHistory = [];
+    let currentProfile = localStorage.getItem('jerryys_ai_profile') || 'default';
+    let currentThinkingRow = null;
+
     function openKuramaModal() {
       kuramaModal.classList.add('open');
-      kuramaInput.focus();
+      setTimeout(() => kuramaInput.focus(), 100);
     }
 
     function closeKuramaModal() {
@@ -1980,11 +2079,54 @@
       setTimeout(openKuramaModal, 300);
     }
 
+    // Profile selector handling
+    const profilePills = document.querySelectorAll('.profile-pill');
+    function initProfileUI() {
+      profilePills.forEach(pill => {
+        if (pill.dataset.profile === currentProfile) {
+          pill.classList.add('active');
+        } else {
+          pill.classList.remove('active');
+        }
+        pill.addEventListener('click', () => {
+          profilePills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          currentProfile = pill.dataset.profile;
+          localStorage.setItem('jerryys_ai_profile', currentProfile);
+        });
+      });
+    }
+    initProfileUI();
+
+    // New Chat handler
+    if (btnNewChat) {
+      btnNewChat.addEventListener('click', () => {
+        chatHistory = [];
+        try {
+          localStorage.removeItem('jerryys_ai_history');
+        } catch (_) {}
+        const rows = kuramaChatBody.querySelectorAll('.chat-row');
+        rows.forEach(r => r.remove());
+        if (kuramaEmptyState) kuramaEmptyState.style.display = 'block';
+        kuramaInput.value = '';
+        kuramaInput.focus();
+        showToast('Started new chat');
+      });
+    }
+
     // Quick chip buttons
     document.querySelectorAll('.kurama-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         handleUserPrompt(chip.dataset.prompt);
       });
+    });
+
+    // Input handlers: Enter to send, Shift+Enter for new line
+    kuramaInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        kuramaForm.dispatchEvent(new Event('submit'));
+      }
     });
 
     kuramaForm.addEventListener('submit', (e) => {
@@ -1995,222 +2137,222 @@
       handleUserPrompt(query);
     });
 
-    // Color conversion math
-    function hexToRgb(hex) {
-      const clean = hex.replace('#', '');
-      const num = parseInt(clean, 16);
-      return {
-        r: (num >> 16) & 255,
-        g: (num >> 8) & 255,
-        b: num & 255
-      };
+    // Restore history from localStorage
+    function restoreChatHistory() {
+      try {
+        const raw = localStorage.getItem('jerryys_ai_history');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            chatHistory = parsed;
+            if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
+            chatHistory.forEach(msg => {
+              if (msg.role === 'user') {
+                renderUserMessage(msg.content, false);
+              } else if (msg.role === 'assistant') {
+                renderAssistantMessage(msg.content, false);
+              }
+            });
+            kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not restore chat history:', err);
+      }
+    }
+    restoreChatHistory();
+
+    function saveChatHistory() {
+      try {
+        localStorage.setItem('jerryys_ai_history', JSON.stringify(chatHistory));
+      } catch (err) {
+        console.warn('Could not save chat history:', err);
+      }
     }
 
-    function getLuminance(r, g, b) {
-      const a = [r, g, b].map(v => {
-        v /= 255;
-        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    // Safe model response formatting with textContent and clean code fences
+    function formatSafeMarkdown(container, text) {
+      if (!text.includes('```')) {
+        container.textContent = text;
+        return;
+      }
+      const parts = text.split(/(```[\s\S]*?```)/g);
+      parts.forEach(part => {
+        if (part.startsWith('```') && part.endsWith('```')) {
+          const firstLineEnd = part.indexOf('\n');
+          let codeContent = '';
+          if (firstLineEnd !== -1) {
+            codeContent = part.slice(firstLineEnd + 1, -3);
+          } else {
+            codeContent = part.slice(3, -3);
+          }
+          const pre = document.createElement('pre');
+          const code = document.createElement('code');
+          code.textContent = codeContent.trim();
+          pre.appendChild(code);
+          container.appendChild(pre);
+        } else if (part) {
+          const span = document.createElement('span');
+          span.textContent = part;
+          container.appendChild(span);
+        }
       });
-      return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
     }
 
-    function getContrastRatio(hex1, hex2) {
-      const rgb1 = hexToRgb(hex1);
-      const rgb2 = hexToRgb(hex2);
-      const l1 = getLuminance(rgb1.r, rgb1.g, rgb1.b) + 0.05;
-      const l2 = getLuminance(rgb2.r, rgb2.g, rgb2.b) + 0.05;
-      return (Math.max(l1, l2) / Math.min(l1, l2)).toFixed(2);
+    function renderUserMessage(text, scroll = true) {
+      const row = document.createElement('div');
+      row.className = 'chat-row user';
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble-user';
+      bubble.textContent = text;
+      row.appendChild(bubble);
+      kuramaChatBody.appendChild(row);
+      if (scroll) kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
     }
 
-    // Deterministic palette engine
-    function generatePalette(prompt) {
-      const p = prompt.toLowerCase();
+    function renderAssistantMessage(text, scroll = true) {
+      const row = document.createElement('div');
+      row.className = 'chat-row bot';
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble-bot';
 
-      if (p.includes('fintech') || p.includes('bank') || p.includes('crypto')) {
-        return {
-          title: "Emerald Ledger",
-          reply: "Designed an institutional fintech palette conveying authority, security, and wealth generation through deep malachite greens and refined slate contrast.",
-          colors: [
-            { role: "background", hex: "#080E0B", name: "Deep Obsidian Slate" },
-            { role: "surface", hex: "#121C16", name: "Malachite Surface" },
-            { role: "primary", hex: "#00E575", name: "Electric Mint Green" },
-            { role: "secondary", hex: "#22B573", name: "Jade Ledger" },
-            { role: "accent", hex: "#39FF14", name: "Cyber Volt" },
-            { role: "text", hex: "#F3FFF8", name: "Crisp Mint White" }
-          ]
-        };
+      const header = document.createElement('div');
+      header.className = 'bot-message-header';
+      header.innerHTML = `<span class="badge-dot" style="background:#39FF14; width:6px; height:6px; border-radius:50%; display:inline-block; box-shadow:0 0 8px #39FF14;"></span> Jerryy's AI`;
+
+      const replyBody = document.createElement('div');
+      replyBody.className = 'bot-reply-text';
+      formatSafeMarkdown(replyBody, text);
+
+      bubble.appendChild(header);
+      bubble.appendChild(replyBody);
+      row.appendChild(bubble);
+      kuramaChatBody.appendChild(row);
+      if (scroll) kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+    }
+
+    function renderErrorMessage(text) {
+      const row = document.createElement('div');
+      row.className = 'chat-row bot';
+      const bubble = document.createElement('div');
+      bubble.className = 'error-bubble';
+      bubble.textContent = text;
+      row.appendChild(bubble);
+      kuramaChatBody.appendChild(row);
+      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+    }
+
+    function showThinking() {
+      if (currentThinkingRow) return;
+      const row = document.createElement('div');
+      row.className = 'chat-row bot';
+      row.innerHTML = `
+        <div class="thinking-bubble">
+          <span>Jerryy's AI is thinking</span>
+          <div class="thinking-dots">
+            <span class="thinking-dot"></span>
+            <span class="thinking-dot"></span>
+            <span class="thinking-dot"></span>
+          </div>
+        </div>
+      `;
+      kuramaChatBody.appendChild(row);
+      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+      currentThinkingRow = row;
+    }
+
+    function hideThinking() {
+      if (currentThinkingRow) {
+        currentThinkingRow.remove();
+        currentThinkingRow = null;
       }
-
-      if (p.includes('game') || p.includes('gaming') || p.includes('cyberpunk') || p.includes('tactical')) {
-        return {
-          title: "Neo Cyberpunk",
-          reply: "High-octane tactical gaming palette engineered with laser volt green, neon magenta, and midnight carbon fiber surfaces.",
-          colors: [
-            { role: "background", hex: "#0A0A0C", name: "Carbon Void" },
-            { role: "surface", hex: "#16161D", name: "Tactical Armor" },
-            { role: "primary", hex: "#39FF14", name: "Neon Matrix Green" },
-            { role: "secondary", hex: "#FF007F", name: "Hyper Magenta" },
-            { role: "accent", hex: "#00E5FF", name: "Plasma Cyan" },
-            { role: "text", hex: "#FFFFFF", name: "Pure Signal White" }
-          ]
-        };
-      }
-
-      if (p.includes('saas') || p.includes('dashboard') || p.includes('app')) {
-        return {
-          title: "Nova Horizon SaaS",
-          reply: "Streamlined modern SaaS UI palette built for maximum data readability, micro-interactions, and cognitive ergonomics.",
-          colors: [
-            { role: "background", hex: "#0D1117", name: "Deep Slate Dark" },
-            { role: "surface", hex: "#161B22", name: "Elevated Card" },
-            { role: "primary", hex: "#2F69FF", name: "Royal Azure" },
-            { role: "secondary", hex: "#6366F1", name: "Indigo Orbit" },
-            { role: "accent", hex: "#39FF14", name: "Active Pulse Green" },
-            { role: "text", hex: "#F0F6FC", name: "High-Contrast White" }
-          ]
-        };
-      }
-
-      if (p.includes('luxury') || p.includes('portfolio') || p.includes('brand')) {
-        return {
-          title: "Atelier Champagne",
-          reply: "An ultra-refined minimal luxury palette balancing satin blacks, ivory showcases, and warm bronze gold accents.",
-          colors: [
-            { role: "background", hex: "#0A0A0A", name: "Onyx Satin" },
-            { role: "surface", hex: "#171717", name: "Studio Charcoal" },
-            { role: "primary", hex: "#D4AF37", name: "Metallic Gold" },
-            { role: "secondary", hex: "#E5E5E5", name: "Platinum Grey" },
-            { role: "accent", hex: "#C5A059", name: "Warm Champagne" },
-            { role: "text", hex: "#FAFAFA", name: "Silk White" }
-          ]
-        };
-      }
-
-      // Default Jerryy's AI Spectrum
-      return {
-        title: "Jerryy's AI Exam Intelligence",
-        reply: `Jerryy's AI Exam Preparation Model (actively undergoing training) analyzed: "${prompt}". Formulated core curriculum guidance and problem-solving structure.`,
-        colors: [
-          { role: "background", hex: "#050608", name: "Obsidian Deep" },
-          { role: "surface", hex: "#13151D", name: "Frosted Container" },
-          { role: "primary", hex: "#39FF14", name: "Volt Green" },
-          { role: "secondary", hex: "#2F69FF", name: "Cobalt Blue" },
-          { role: "accent", hex: "#00F0FF", name: "Electric Cyan" },
-          { role: "text", hex: "#FFFFFF", name: "Signal White" }
-        ]
-      };
     }
 
     async function handleUserPrompt(promptText) {
+      const cleanPrompt = promptText.trim();
+      if (!cleanPrompt) return;
+
       if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
 
-      // 1. Render User Bubble
-      const userRow = document.createElement('div');
-      userRow.className = 'chat-row user';
-      userRow.innerHTML = `<div class="chat-bubble-user">${escapeHtml(promptText)}</div>`;
-      kuramaChatBody.appendChild(userRow);
-      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+      // 1. Render User Message
+      renderUserMessage(cleanPrompt, true);
 
-      // 2. Generate or fetch palette
-      let palette;
+      // 2. Capture history to send (most recent 12 prior messages)
+      const historyToSend = chatHistory.slice(-12);
+
+      // 3. Append user message to history & save
+      chatHistory.push({ role: 'user', content: cleanPrompt });
+      saveChatHistory();
+
+      // 4. Show thinking indicator
+      showThinking();
+
+      // 5. Send POST to /api/chat
       try {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: promptText })
+          body: JSON.stringify({
+            message: cleanPrompt,
+            history: historyToSend,
+            profile: currentProfile
+          })
         });
+
+        hideThinking();
+
         if (res.ok) {
           const data = await res.json();
-          palette = {
-            title: data.name || "Jerryy's AI Exam Model",
-            reply: data.reply || "Jerryy's AI Exam Model processed your preparation query.",
-            colors: data.colors ? data.colors.map(c => ({ role: c.role, hex: c.hex, name: c.usage || c.role })) : []
-          };
+          const reply = data.reply || '';
+          chatHistory.push({ role: 'assistant', content: reply });
+          saveChatHistory();
+          renderAssistantMessage(reply, true);
         } else {
-          palette = generatePalette(promptText);
+          let errDetail = '';
+          try {
+            const errJson = await res.json();
+            errDetail = errJson.detail || '';
+          } catch (_) {}
+
+          let userMsg = "Jerryy's AI could not connect to the local model. Make sure Ollama is running.";
+          if (res.status === 404 || errDetail.includes('not available in Ollama')) {
+            userMsg = "The jerryys-ai model is not available in Ollama.";
+          } else if (errDetail) {
+            userMsg = errDetail;
+          }
+          renderErrorMessage(userMsg);
         }
       } catch (err) {
-        palette = generatePalette(promptText);
-      }
-
-      // Calculate WCAG contrast against background
-      const bgHex = palette.colors.find(c => c.role === 'background')?.hex || "#000000";
-      const textHex = palette.colors.find(c => c.role === 'text')?.hex || "#ffffff";
-      const primaryHex = palette.colors.find(c => c.role === 'primary')?.hex || "#39FF14";
-      const textRatio = getContrastRatio(textHex, bgHex);
-      const primaryRatio = getContrastRatio(primaryHex, bgHex);
-
-      // 3. Render Bot Response
-      const botRow = document.createElement('div');
-      botRow.className = 'chat-row bot';
-
-      let swatchesHtml = '';
-      palette.colors.forEach(col => {
-        swatchesHtml += `
-          <div class="swatch-card" onclick="navigator.clipboard.writeText('${col.hex}'); showToast('Copied ${col.hex}')">
-            <div class="swatch-color-box" style="background-color: ${col.hex}"></div>
-            <div class="swatch-meta">
-              <span class="swatch-role">${col.role}</span>
-              <span class="swatch-hex">${col.hex}</span>
-            </div>
-          </div>
-        `;
-      });
-
-      botRow.innerHTML = `
-        <div class="chat-bubble-bot">
-          <div class="bot-reply-text">
-            <strong>${palette.title}:</strong> ${escapeHtml(palette.reply)}
-          </div>
-
-          <div class="swatches-grid">
-            ${swatchesHtml}
-          </div>
-
-          <div class="contrast-badge-row">
-            <span class="contrast-tag pass">Text / BG: ${textRatio}:1 (AAA)</span>
-            <span class="contrast-tag pass">Primary / BG: ${primaryRatio}:1 (AA)</span>
-            <span class="contrast-tag">WCAG 2.1 Compliant</span>
-          </div>
-
-          <div class="palette-actions">
-            <button class="btn-palette-action" onclick="copyCssVars('${palette.colors.map(c => `--color-${c.role}: ${c.hex};`).join(' ')}')">Copy CSS Variables</button>
-            <button class="btn-palette-action" onclick="copyJson('${escapeHtml(JSON.stringify(palette.colors))}')">Copy JSON</button>
-          </div>
-        </div>
-      `;
-
-      kuramaChatBody.appendChild(botRow);
-      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-
-      // Update 3D sphere colors to reflect new palette!
-      update3DPalette(palette);
-    }
-
-    function update3DPalette(palette) {
-      const map = {};
-      palette.colors.forEach(c => { map[c.role] = c.hex; });
-
-      if (map.background) paletteTarget.pastel.set(map.background);
-      if (map.surface) paletteTarget.light.set(map.surface);
-      if (map.primary) paletteTarget.medium.set(map.primary);
-      if (map.secondary) paletteTarget.deep.set(map.secondary);
-      if (map.accent) paletteTarget.glass.set(map.accent);
-
-      if (map.primary) {
-        document.documentElement.style.setProperty('--neon-accent', map.primary);
+        hideThinking();
+        renderErrorMessage("Jerryy's AI could not connect to the local model. Make sure Ollama is running.");
       }
     }
 
-    window.copyCssVars = (varsStr) => {
-      navigator.clipboard.writeText(`:root {\n  ${varsStr.replace(/;/g, ';\n ')}\n}`);
-      showToast('CSS Variables copied');
-    };
-
-    window.copyJson = (jsonStr) => {
-      navigator.clipboard.writeText(jsonStr);
-      showToast('Palette JSON copied');
-    };
+    // Health check on load
+    async function checkOllamaHealth() {
+      try {
+        const res = await fetch('/api/health');
+        if (res.ok) {
+          const data = await res.json();
+          const statusText = document.getElementById('ollama-status-text');
+          const badge = document.getElementById('ollama-status-badge');
+          if (data.ollama === 'online') {
+            if (statusText) statusText.textContent = 'OLLAMA ONLINE';
+            if (badge) {
+              badge.style.color = '#39FF14';
+              badge.style.borderColor = 'rgba(57,255,20,0.3)';
+            }
+          } else {
+            if (statusText) statusText.textContent = 'OLLAMA OFFLINE';
+            if (badge) {
+              badge.style.color = '#ff8585';
+              badge.style.borderColor = 'rgba(255,85,85,0.3)';
+            }
+          }
+        }
+      } catch (_) {}
+    }
+    checkOllamaHealth();
 
     window.showToast = showToast;
 

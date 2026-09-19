@@ -1,30 +1,37 @@
 """
 Jerryy's AI FastAPI Backend
-Serves exam preparation intelligence API and static frontend assets.
+Connects the web frontend to local Ollama (jerryys-ai) model with chat profile support.
 """
 
 import os
-import json
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from color_engine import process_color_query
+from ollama_client import (
+    chat_with_ollama,
+    check_ollama_health,
+    OllamaConnectionError,
+    OllamaModelNotFoundError,
+    OllamaResponseError,
+    OLLAMA_MODEL
+)
+from chat_profiles import get_chat_profile
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("jerryys_ai")
 
 app = FastAPI(
-    title="Jerryy's AI — Exam Preparation Model API",
-    description="Intelligent exam preparation and curriculum reasoning engine",
-    version="1.0.0"
+    title="Jerryy's AI — Local Learning & Exam Preparation Model",
+    description="FastAPI service connecting to local Ollama instance running jerryys-ai model.",
+    version="2.0.0"
 )
 
 # CORS configuration
@@ -36,91 +43,135 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Request / Response Models
-class ChatMessage(BaseModel):
-    role: str = "user"
+# Pydantic Models
+class HistoryItem(BaseModel):
+    role: str
     content: str
 
+    @field_validator("role")
+    def validate_role(cls, v: str) -> str:
+        v_clean = v.strip().lower()
+        if v_clean not in ("user", "assistant"):
+            raise ValueError("Role must be 'user' or 'assistant'")
+        return v_clean
+
+
 class ChatRequest(BaseModel):
-    message: str = Field(..., max_length=2000, description="User prompt describing styling or color needs")
-    history: Optional[List[ChatMessage]] = Field(default_factory=list, description="Recent conversation history")
+    message: str = Field(..., max_length=4000, description="User message (max 4000 chars)")
+    history: Optional[List[HistoryItem]] = Field(default_factory=list, description="Recent conversation history")
+    profile: Optional[str] = Field(default="default", description="Selected chat profile")
 
-class ColorItem(BaseModel):
-    role: str
-    hex: str
-    usage: str
-
-class PaletteData(BaseModel):
-    name: str
-    mood: List[str]
-    colors: List[ColorItem]
-    contrast: Optional[Dict[str, Any]] = None
 
 class ChatResponse(BaseModel):
     reply: str
-    palette: PaletteData
+    model: str
+    profile: str
 
-# Health Check
+
+# Exception Handlers
+@app.exception_handler(OllamaConnectionError)
+async def handle_connection_error(request: Request, exc: OllamaConnectionError):
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": str(exc), "error": "connection_error"}
+    )
+
+
+@app.exception_handler(OllamaModelNotFoundError)
+async def handle_model_not_found(request: Request, exc: OllamaModelNotFoundError):
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": str(exc), "error": "model_not_found"}
+    )
+
+
+@app.exception_handler(OllamaResponseError)
+async def handle_response_error(request: Request, exc: OllamaResponseError):
+    return JSONResponse(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": str(exc), "error": "model_error"}
+    )
+
+
+# 1. Health Check Endpoint
 @app.get("/api/health")
 async def health_check():
+    health = await check_ollama_health()
+    ollama_status = "online" if health.get("online") else "offline"
+    
     return {
         "status": "ok",
         "service": "Jerryy's AI",
-        "engine": "AI Exam Preparation Model (Training in Progress)",
-        "version": "1.0.0"
+        "engine": "Ollama",
+        "model": OLLAMA_MODEL,
+        "ollama": ollama_status,
+        "model_available": health.get("model_found", False)
     }
 
-# Main Chat Endpoint
+
+# 2. Chat Endpoint
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(payload: ChatRequest):
-    message = payload.message.strip()
-    if not message:
+    user_msg = payload.message.strip()
+    if not user_msg:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    # 1. Check for optional LLM integration if AI_API_KEY is configured
-    ai_api_key = os.getenv("AI_API_KEY")
-    if ai_api_key:
-        try:
-            import httpx
-            # Example LLM proxy call could go here; if it succeeds, parse JSON
-            # For resilience, if not configured or any error occurs, fall through to deterministic engine
-            logger.info("AI_API_KEY present; checking model interpretation...")
-        except Exception as e:
-            logger.warning(f"LLM call fallback: {e}")
+    profile_name = (payload.profile or "default").strip().lower()
+    system_prompt = get_chat_profile(profile_name)
 
-    # 2. Local Deterministic Color Engine
-    try:
-        result = process_color_query(message)
-        return result
-    except Exception as e:
-        logger.error(f"Error in color engine: {e}")
-        # Emergency resilient fallback
-        fallback = process_color_query("minimal")
-        return fallback
+    # Filter and validate history: only user and assistant, limit to last 12
+    valid_history = []
+    if payload.history:
+        for item in payload.history[-12:]:
+            r = item.role.lower()
+            if r in ("user", "assistant"):
+                valid_history.append({"role": r, "content": item.content})
 
-# Locate frontend directory
+    # Construct Ollama message sequence
+    messages = [
+        {"role": "system", "content": system_prompt},
+        *valid_history,
+        {"role": "user", "content": user_msg}
+    ]
+
+    # Query Ollama
+    reply = await chat_with_ollama(messages)
+
+    return {
+        "reply": reply,
+        "model": OLLAMA_MODEL,
+        "profile": profile_name
+    }
+
+
+# Static Frontend Routing
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
-ROOT_INDEX = BASE_DIR / "index.html"
+
 
 @app.get("/")
 async def serve_root():
-    if (BASE_DIR / "index.html").exists():
-        return FileResponse(BASE_DIR / "index.html")
-    elif (FRONTEND_DIR / "index.html").exists():
-        return FileResponse(FRONTEND_DIR / "index.html")
+    # Priority: frontend/index.html, then root index.html
+    fe_index = FRONTEND_DIR / "index.html"
+    if fe_index.exists() and fe_index.is_file():
+        return FileResponse(fe_index)
+    root_index = BASE_DIR / "index.html"
+    if root_index.exists() and root_index.is_file():
+        return FileResponse(root_index)
     raise HTTPException(status_code=404, detail="index.html not found")
+
 
 @app.get("/{filename}.html")
 async def serve_html_file(filename: str):
-    target = BASE_DIR / f"{filename}.html"
-    if target.exists() and target.is_file():
-        return FileResponse(target)
-    target_fe = FRONTEND_DIR / f"{filename}.html"
-    if target_fe.exists() and target_fe.is_file():
-        return FileResponse(target_fe)
+    fe_file = FRONTEND_DIR / f"{filename}.html"
+    if fe_file.exists() and fe_file.is_file():
+        return FileResponse(fe_file)
+    root_file = BASE_DIR / f"{filename}.html"
+    if root_file.exists() and root_file.is_file():
+        return FileResponse(root_file)
     raise HTTPException(status_code=404, detail=f"{filename}.html not found")
+
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
