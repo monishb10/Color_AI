@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KURAMA — AI Color Intelligence</title>
+  <title>Jerryy'S AI — Color Intelligence</title>
 
   <!-- Typography: Outfit, Playfair Display, General Sans, Raleway, JetBrains Mono -->
   <style>
@@ -351,7 +351,7 @@
       pointer-events: none;
     }
 
-    /* Loopstack Top Navigation (Switch Back & Kurama Status) */
+    /* Loopstack Top Navigation (Switch Back & Jerryy'S AI Status) */
     .loopstack-nav {
       position: fixed;
       top: 24px;
@@ -668,12 +668,12 @@
 
     .footer-logo-text {
       font-family: 'General Sans', -apple-system, sans-serif;
-      font-size: 21.9vw;
+      font-size: clamp(2.5rem, 12.8vw, 13.5rem);
       font-weight: 400;
       color: #ffffff;
       letter-spacing: -0.03em;
       margin-right: -0.03em;
-      transform: translateX(-20px);
+      transform: translateX(0);
       line-height: 0.8;
       margin-top: 0;
       margin-bottom: 0;
@@ -791,7 +791,7 @@
     }
 
     /* =========================================================
-       7. INTEGRATED KURAMA CHATBOT MODAL (IN PAGE 2)
+       7. INTEGRATED JERRYY'S AI CHATBOT MODAL (IN PAGE 2)
        ========================================================= */
     .kurama-modal-overlay {
       position: fixed;
@@ -1299,7 +1299,7 @@
         padding: 0 20px;
       }
       .footer-logo-text {
-        font-size: 20vw;
+        font-size: clamp(2rem, 12vw, 4rem);
       }
       .hero-title {
         font-size: 2.2rem;
@@ -1321,7 +1321,7 @@
     <div class="canvas-shell">
       <!-- Header -->
       <header class="canvas-header">
-        <div class="canvas-brand">KURAMA</div>
+        <div class="canvas-brand">Jerryy'S AI</div>
         <div class="canvas-status">
           <span class="status-dot-blue"></span>
           <span>COLOR INTELLIGENCE / ONLINE</span>
@@ -1350,7 +1350,7 @@
 
       <!-- Footer Info -->
       <footer class="canvas-footer">
-        KURAMA / AI COLOR INTELLIGENCE / 2026
+        Jerryy'S AI / COLOR INTELLIGENCE / 2026
       </footer>
     </div>
   </div>
@@ -1383,9 +1383,9 @@
         </a>
       </div>
 
-      <button id="kurama-status-toggle" class="kurama-status-badge" aria-label="Open Kurama AI Chat">
+      <button id="kurama-status-toggle" class="kurama-status-badge" aria-label="Open Jerryy'S AI Chat">
         <span class="badge-dot"></span>
-        <span>KURAMA AI ASSISTANT</span>
+        <span>JERRYY'S AI ASSISTANT</span>
       </button>
     </header>
 
@@ -1428,14 +1428,14 @@
         </nav>
 
         <div class="footer-copyright">
-          © 2026 Kurama
+          © 2026 Jerryy'S AI
         </div>
       </div>
     </footer>
 
-    <!-- Giant "Kurama" wordmark (pinned to bottom) -->
+    <!-- Giant "Jerryy'S AI" wordmark (pinned to bottom) -->
     <div class="footer-logo-wrap">
-      <h2 class="footer-logo-text">Kurama</h2>
+      <h2 class="footer-logo-text">Jerryy'S AI</h2>
     </div>
 
     <!-- Background flower video -->
@@ -1460,7 +1460,7 @@
     <div id="cursor-ring" class="cursor-ring-outline"></div>
 
     <!-- =========================================================
-         INTEGRATED KURAMA BOT MODAL
+         INTEGRATED JERRYY'S AI BOT MODAL
          ========================================================= -->
     <div id="kurama-modal" class="kurama-modal-overlay">
       <div class="kurama-modal-card">
@@ -1469,7 +1469,7 @@
           <div class="kurama-modal-title">
             <div class="kurama-mini-orb"></div>
             <div>
-              <div class="kurama-title-text">KURAMA</div>
+              <div class="kurama-title-text">Jerryy'S AI</div>
               <div class="kurama-sub-text">AI Color Intelligence</div>
             </div>
           </div>
@@ -1485,7 +1485,7 @@
               <span class="badge-dot" style="background:#39FF14; box-shadow: 0 0 10px #39FF14; width:6px; height:6px; border-radius:50%;"></span>
               <span>ONLINE</span>
             </div>
-            <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Kurama Dialog">×</button>
+            <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Jerryy'S AI Dialog">×</button>
           </div>
         </div>
 
@@ -1529,7 +1529,7 @@
   <div id="toast-pill" class="toast-pill">Copied to clipboard</div>
 
   <!-- =========================================================
-       MODULE LOGIC: THREE.JS + LOOPSTACK + KURAMA AI ENGINE
+       MODULE LOGIC: THREE.JS + LOOPSTACK + JERRYY'S AI ENGINE
        ========================================================= -->
   <script type="module">
     import * as THREE from 'three';
@@ -1842,7 +1842,7 @@
       // 1. Wordmark letter-by-letter reveal
       const logoText = document.querySelector('.footer-logo-text');
       if (logoText) {
-        const rawText = "Kurama";
+        const rawText = "Jerryy'S AI";
         logoText.innerHTML = '';
         [...rawText].forEach((char, index) => {
           const wrapper = document.createElement('span');
@@ -1850,7 +1850,7 @@
           const inner = document.createElement('span');
           inner.textContent = char === ' ' ? '\u00A0' : char;
           inner.className = 'letter-inner';
-          inner.style.animationDelay = `${index * 0.09}s`;
+          inner.style.animationDelay = `${index * 0.08}s`;
           wrapper.appendChild(inner);
           logoText.appendChild(wrapper);
         });
@@ -1948,7 +1948,7 @@
     }
 
     // =========================================================
-    // KURAMA INTEGRATED BOT ENGINE (WCAG & COLOR HARMONY)
+    // JERRYY'S AI INTEGRATED BOT ENGINE (WCAG & COLOR HARMONY)
     // =========================================================
     const kuramaModal = document.getElementById('kurama-modal');
     const btnOpenKurama1 = document.getElementById('loopstack-hero-btn');
@@ -2088,9 +2088,9 @@
         };
       }
 
-      // Default Kurama Spectrum
+      // Default Jerryy'S AI Spectrum
       return {
-        title: "Kurama Chromatic Intelligence",
+        title: "Jerryy'S AI Chromatic Intelligence",
         reply: `Engineered an ergonomic color system tailored for "${prompt}". High compliance ratios, vivid interactive triggers, and balanced contrast.`,
         colors: [
           { role: "background", hex: "#050608", name: "Obsidian Deep" },
@@ -2124,7 +2124,7 @@
         if (res.ok) {
           const data = await res.json();
           palette = {
-            title: data.name || "Kurama Palette",
+            title: data.name || "Jerryy'S AI Palette",
             reply: data.reply || "Generated custom color scheme.",
             colors: data.colors.map(c => ({ role: c.role, hex: c.hex, name: c.usage || c.role }))
           };

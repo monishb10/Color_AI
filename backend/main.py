@@ -1,5 +1,5 @@
 """
-KURAMA FastAPI Backend
+Jerryy'S AI FastAPI Backend
 Serves color intelligence API and static frontend assets.
 """
 
@@ -19,10 +19,10 @@ from color_engine import process_color_query
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("kurama")
+logger = logging.getLogger("jerryys_ai")
 
 app = FastAPI(
-    title="KURAMA — AI Color Intelligence API",
+    title="Jerryy'S AI — Color Intelligence API",
     description="Intelligent color generation and palette synthesis engine",
     version="1.0.0"
 )
@@ -65,7 +65,7 @@ class ChatResponse(BaseModel):
 async def health_check():
     return {
         "status": "ok",
-        "service": "KURAMA",
+        "service": "Jerryy'S AI",
         "engine": "AI Color Intelligence",
         "version": "1.0.0"
     }

@@ -1,6 +1,6 @@
-# KURAMA — Backend Engine
+# Jerryy'S AI — Backend Engine
 
-FastAPI backend providing color intelligence, palette generation, and WCAG accessibility evaluation for **KURAMA**.
+FastAPI backend providing color intelligence, palette generation, and WCAG accessibility evaluation for **Jerryy'S AI**.
 
 ## Setup & Running
 

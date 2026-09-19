@@ -1,22 +1,22 @@
 # Color_AI
 
-> **KURAMA** — Next-Generation AI Color Suggestion Chatbot & Interactive 3D WebGL Palette Studio.
+> **Jerryy'S AI** — Next-Generation AI Color Suggestion Chatbot & Interactive 3D WebGL Palette Studio.
 
-![KURAMA Color AI](frontend/index.html)
+![Jerryy'S AI Color AI](frontend/index.html)
 
 ---
 
 ## 🎨 Overview
 
-**Color_AI (KURAMA)** is an intelligent color curation assistant combined with an interactive real-time WebGL physics engine. Kurama helps designers, developers, and product creators discover tailored color palettes for websites, mobile apps, SaaS dashboards, gaming interfaces, brand identities, and e-commerce platforms.
+**Color_AI (Jerryy'S AI)** is an intelligent color curation assistant combined with an interactive real-time WebGL physics engine. Jerryy'S AI helps designers, developers, and product creators discover tailored color palettes for websites, mobile apps, SaaS dashboards, gaming interfaces, brand identities, and e-commerce platforms.
 
-As you converse with KURAMA, the background 3D gravity field of 96 glass and matte spheres dynamically morphs and fluidly interpolates to reflect your new palette in real-time.
+As you converse with Jerryy'S AI, the background 3D gravity field of 96 glass and matte spheres dynamically morphs and fluidly interpolates to reflect your new palette in real-time.
 
 ---
 
 ## ✨ Features
 
-- 🤖 **KURAMA AI Color Engine**:
+- 🤖 **Jerryy'S AI Color Engine**:
   - Contextual domain intelligence (Fintech, Cyberpunk, Healthcare, Luxury, Gaming, SaaS, E-Commerce, Nature, Minimalist).
   - Exact HEX matching with algorithmic color harmonies (Monochromatic, Analogous, Complementary, Triadic, Split-Complementary).
   - Dynamic palette generator: Primary, Secondary, Accent, Neutral Background, Surface Card, and High-Contrast Text colors.
@@ -50,7 +50,7 @@ python -m http.server 3000
 npx serve .
 ```
 
-Visit `http://localhost:3000` to interact with Kurama and the 3D physics engine.
+Visit `http://localhost:3000` to interact with Jerryy'S AI and the 3D physics engine.
 
 ---
 
@@ -80,7 +80,7 @@ The API will be available at:
 
 ```text
 Color_AI/
-├── index.html              # Standalone single-file frontend with Three.js & Kurama UI
+├── index.html              # Standalone single-file frontend with Three.js & Jerryy'S AI UI
 ├── frontend/
 │   └── index.html          # Frontend app source
 ├── backend/
